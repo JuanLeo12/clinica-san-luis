@@ -684,6 +684,51 @@ th {
   padding: 12px 14px;
 }
 
+.data-note {
+  background: #eef6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 5px solid var(--accent);
+  border-radius: 8px;
+  color: #17355f;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+  margin-top: 10px;
+  padding: 12px 14px;
+}
+
+.ml-flow {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.ml-flow > div {
+  background: linear-gradient(135deg, #ffffff, #f0fbf7);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-height: 110px;
+  padding: 14px;
+}
+
+.ml-flow span,
+.ml-flow small {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ml-flow strong {
+  color: #0f3340;
+  display: block;
+  font-size: 20px;
+  line-height: 1.15;
+  margin: 8px 0;
+}
+
 .transaction-card {
   background:
     linear-gradient(90deg, rgba(49, 107, 255, 0.12), transparent 10px),
@@ -835,6 +880,22 @@ th {
   font-size: 13px;
   line-height: 1.45;
   margin-top: 8px;
+}
+
+.ml-result-grid p {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-top: 8px;
+}
+
+.compact-ml {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.compact-ml > div {
+  min-height: 104px;
 }
 
 .medicine-row {
@@ -1219,6 +1280,7 @@ th {
   .vitals-compact,
   .metric-grid,
   .ml-grid,
+  .ml-flow,
   .insight-strip,
   .ml-result-grid,
   .ml-dashboard-grid,

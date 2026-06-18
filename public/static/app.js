@@ -415,29 +415,39 @@ function renderMlModelCards() {
     {
       title: "Regresion lineal",
       value: info ? `PA = ${info.linear_regression.slope} x FC + ${info.linear_regression.intercept}` : "Presion por FC",
-      detail: "Estima la presion sistolica esperada desde el ritmo cardiaco capturado por IoT.",
+      input: "Entrada: frecuencia cardiaca capturada en triaje.",
+      output: "Salida: presion sistolica esperada.",
+      use: "Uso: comparar la presion real contra una referencia calculada y detectar lecturas fuera de patron.",
     },
     {
       title: "Regresion lineal multiple",
       value: info ? `${info.multiple_linear_regression.coefficients.length} coeficientes` : "Tiempo de consulta",
-      detail: "Calcula minutos probables de consulta usando edad, signos vitales e IMC.",
+      input: "Entrada: edad, temperatura, FC, SpO2, presion e IMC.",
+      output: "Salida: minutos estimados de consulta.",
+      use: "Uso: anticipar carga medica y ayudar a organizar la agenda de consultorios.",
     },
     {
       title: "Regresion logistica",
       value: info ? `${info.logistic_regression.weights.length} pesos` : "Riesgo clinico",
-      detail: "Devuelve la probabilidad de riesgo para apoyar la priorizacion del paciente.",
+      input: "Entrada: signos vitales e indicadores corporales.",
+      output: "Salida: probabilidad de riesgo bajo, moderado o alto.",
+      use: "Uso: alertar si un paciente necesita atencion prioritaria antes de consulta.",
     },
     {
       title: "Arbol de decision",
       value: info ? info.decision_tree.classes.join(" / ") : "Prioridad",
-      detail: "Clasifica el turno como emergencia, urgente, preferente o rutina.",
+      input: "Entrada: umbrales clinicos aprendidos desde los datos de entrenamiento.",
+      output: "Salida: emergencia, urgente, preferente o rutina.",
+      use: "Uso: ordenar la cola medica con una regla interpretable para el personal.",
     },
   ];
   return cards.map((card) => `
     <article class="ml-card">
       <span>${escapeHtml(card.title)}</span>
       <strong>${escapeHtml(card.value)}</strong>
-      <p>${escapeHtml(card.detail)}</p>
+      <p>${escapeHtml(card.input)}</p>
+      <p>${escapeHtml(card.output)}</p>
+      <p>${escapeHtml(card.use)}</p>
     </article>
   `).join("");
 }
@@ -456,6 +466,10 @@ function renderMlInsights() {
   const urgentRate = Math.round(Number(summary.urgent_rate || 0));
   const risk = Math.round(Number(summary.average_risk || 0));
   const minutes = Number(summary.average_attention_minutes || 0).toFixed(1);
+  const hasRealTriage = Number(summary.samples || 0) > 0 && summary.source === "triajes registrados";
+  const sourceNote = hasRealTriage
+    ? "Los graficos resumen triajes reales guardados en el sistema. El modelo base sigue entrenado con datos clinicos simulados para fines academicos."
+    : "Aun no hay triajes reales guardados; el dashboard muestra una simulacion inicial para explicar como funcionara con datos registrados.";
   return `
     <article class="insight-strip">
       <div><span>Muestra</span><strong>${summary.samples}</strong><small>${escapeHtml(summary.source || "")}</small></div>
@@ -463,7 +477,13 @@ function renderMlInsights() {
       <div><span>Tiempo estimado</span><strong>${minutes} min</strong><small>Regresion multiple</small></div>
       <div><span>Casos urgentes</span><strong>${urgentRate}%</strong><small>Arbol de decision</small></div>
     </article>
+    <div class="ml-flow">
+      <div><span>Datos capturados</span><strong>DNI + triaje IoT</strong><small>Paciente, edad, signos vitales e IMC.</small></div>
+      <div><span>Analisis predictivo</span><strong>4 algoritmos</strong><small>Presion esperada, minutos, riesgo y prioridad.</small></div>
+      <div><span>Decision operativa</span><strong>Cola medica</strong><small>Apoya a recepcion, triaje, medico y administracion.</small></div>
+    </div>
     <div class="decision-note">${escapeHtml(summary.insight || "El panel traduce los modelos en acciones operativas.")}</div>
+    <div class="data-note">${escapeHtml(sourceNote)}</div>
   `;
 }
 
@@ -756,6 +776,11 @@ function consultationMlSummary(item) {
     <span>Signos</span><strong>${triage.temperature} C - FC ${triage.heart_rate} - SpO2 ${triage.spo2}% - PA ${triage.systolic}/${triage.diastolic}</strong>
     <span>ML</span><strong>PA esperada ${analysis.predicted_systolic ?? triage.predicted_systolic} - Consulta ${analysis.estimated_attention_minutes ?? triage.estimated_attention_minutes} min</strong>
     <span>Decision</span><strong>${escapeHtml(triage.decision_summary)}</strong>
+  </div>
+  <div class="ml-result-grid compact-ml">
+    <div><span>Regresion logistica</span><strong>Riesgo ${escapeHtml(triage.risk_label)}</strong><p>Ayuda a priorizar pacientes con mayor probabilidad de complicacion.</p></div>
+    <div><span>Arbol de decision</span><strong>${escapeHtml(triage.priority)}</strong><p>Clasifica la atencion en emergencia, urgente, preferente o rutina.</p></div>
+    <div><span>Regresion multiple</span><strong>${analysis.estimated_attention_minutes ?? triage.estimated_attention_minutes} min</strong><p>Estima la carga de consulta para gestionar el flujo medico.</p></div>
   </div>`;
 }
 
@@ -768,10 +793,10 @@ function analysisMlBox(analysis) {
       <span>Decision</span><strong>${escapeHtml(analysis.decision_summary)}</strong>
     </div>
     <div class="ml-result-grid">
-      <div><span>Regresion lineal</span><strong>PA sistolica esperada: ${analysis.predicted_systolic}</strong></div>
-      <div><span>Regresion lineal multiple</span><strong>Consulta estimada: ${analysis.estimated_attention_minutes} min</strong></div>
-      <div><span>Regresion logistica</span><strong>Probabilidad de riesgo: ${Math.round(analysis.risk_probability * 100)}%</strong></div>
-      <div><span>Arbol de decision</span><strong>Prioridad: ${escapeHtml(analysis.priority)}</strong></div>
+      <div><span>Regresion lineal</span><strong>PA sistolica esperada: ${analysis.predicted_systolic}</strong><p>Compara la presion real con una presion esperada por frecuencia cardiaca.</p></div>
+      <div><span>Regresion lineal multiple</span><strong>Consulta estimada: ${analysis.estimated_attention_minutes} min</strong><p>Calcula tiempo probable usando edad, signos vitales e IMC.</p></div>
+      <div><span>Regresion logistica</span><strong>Probabilidad de riesgo: ${Math.round(analysis.risk_probability * 100)}%</strong><p>Convierte los signos vitales en una probabilidad de riesgo clinico.</p></div>
+      <div><span>Arbol de decision</span><strong>Prioridad: ${escapeHtml(analysis.priority)}</strong><p>Define la prioridad operativa para ordenar la atencion.</p></div>
     </div>`;
 }
 
