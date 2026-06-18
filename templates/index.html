@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clinica San Luis - Gestion interna</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-mark"><img src="{{ url_for('static', filename='clinic-logo.jpg') }}" alt="Logo Clinica San Luis" /></div>
+          <div>
+            <h1>Clinica San Luis</h1>
+            <p id="user-label">Sistema interno</p>
+          </div>
+        </div>
+        <nav class="module-tabs" aria-label="Modulos">
+          <button class="tab-button" data-view="reception" type="button">Recepcion</button>
+          <button class="tab-button" data-view="cashier" type="button">Caja</button>
+          <button class="tab-button" data-view="triage" type="button">Triaje</button>
+          <button class="tab-button" data-view="doctor" type="button">Medico</button>
+          <button class="tab-button" data-view="pharmacy" type="button">Farmacia</button>
+          <button class="tab-button" data-view="admin" type="button">Admin</button>
+        </nav>
+        <div class="sidebar-footer">
+          <span class="status-dot" id="server-status"></span>
+          <span id="last-sync">Sin sincronizar</span>
+          <button id="logout-button" class="ghost-button" type="button">Cerrar sesion</button>
+        </div>
+      </aside>
+
+      <main>
+        <section class="view" id="view-reception">
+          <div class="page-head">
+            <div>
+              <h2>Recepcion</h2>
+              <p>Registro, busqueda, actualizacion de pacientes y citas.</p>
+            </div>
+          </div>
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-head"><h3>Paciente y cita</h3></div>
+              <form class="grid-form" id="reception-form">
+                <input name="patient_id" type="hidden" />
+                <label>DNI / Documento
+                  <div class="inline-field">
+                    <input name="document" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" required />
+                    <button class="secondary-button" data-lookup-dni="reception-form" id="lookup-dni-button" type="button">Buscar</button>
+                  </div>
+                </label>
+                <label>Nombres<input name="first_name" required readonly /></label>
+                <label>Apellidos<input name="last_name" required readonly /></label>
+                <label>Fecha nac.<input name="birth_date" type="date" readonly /></label>
+                <label>Edad<input name="age" min="1" max="120" type="number" required readonly /></label>
+                <label>Sexo<input name="sex" required readonly value="No especificado" /></label>
+                <label>Telefono<input name="phone" inputmode="numeric" maxlength="9" pattern="[0-9]{9}" required /></label>
+                <label class="wide">Especialidad<select id="specialty-select" name="specialty_id" required></select></label>
+                <div class="form-actions wide">
+                  <button class="secondary-button" id="clear-reception-form" type="button">Nuevo paciente</button>
+                  <button class="primary-button" type="submit">Registrar cita</button>
+                </div>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h3>Buscar paciente</h3></div>
+              <input id="patient-search" placeholder="DNI, nombre o apellido" />
+              <div class="queue-list search-results" id="patient-search-results"></div>
+            </section>
+          </div>
+          <section class="panel">
+            <div class="panel-head"><h3>Ultimos registros</h3></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Turno</th><th>Paciente</th><th>Especialidad</th><th>Estado</th><th>Pago</th></tr></thead>
+                <tbody id="recent-appointments"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="view-cashier">
+          <div class="page-head">
+            <div><h2>Caja</h2><p>Cobro por especialidad segun lo registrado por recepcion.</p></div>
+          </div>
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-head"><h3>Pagos pendientes</h3></div>
+              <input id="cashier-search" placeholder="Buscar paciente o turno" />
+              <div class="queue-list" id="cashier-pending"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h3>Pagos confirmados</h3></div>
+              <div class="queue-list" id="cashier-paid"></div>
+            </section>
+            <section class="panel wide-panel">
+              <div class="panel-head"><h3>Transacciones de caja</h3></div>
+              <div class="queue-list" id="cashier-transactions"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-triage">
+          <div class="page-head">
+            <div><h2>Triaje IoT</h2><p>Llamado, captura de signos vitales y priorizacion.</p></div>
+          </div>
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-head"><h3>Cola de triaje</h3></div>
+              <div class="queue-list" id="triage-queue"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h3>Signos vitales</h3>
+                <span class="pill" id="active-triage-pill">Sin paciente activo</span>
+              </div>
+              <form class="vitals-form" id="vitals-form">
+                <label>Temp. C<input name="temperature" step="0.1" type="number" readonly /></label>
+                <label>FC<input name="heart_rate" type="number" readonly /></label>
+                <label>SpO2<input name="spO2" type="number" readonly /></label>
+                <label>PAS<input name="blood_pressure_systolic" type="number" readonly /></label>
+                <label>PAD<input name="blood_pressure_diastolic" type="number" readonly /></label>
+                <label>Peso kg<input name="weight" step="0.1" type="number" readonly /></label>
+                <label>Talla cm<input name="height" step="0.1" type="number" readonly /></label>
+                <div class="form-actions wide">
+                  <button class="secondary-button" id="sync-iot-button" type="button">Capturar IoT</button>
+                  <button class="primary-button" id="capture-triage-button" type="submit" disabled>Guardar triaje</button>
+                </div>
+              </form>
+              <div class="analysis-box" id="triage-analysis"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-doctor">
+          <div class="page-head">
+            <div><h2>Medico</h2><p>Pacientes asignados, consulta, diagnostico y receta.</p></div>
+          </div>
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-head"><h3>Pacientes por atender</h3></div>
+              <div class="queue-list" id="doctor-queue"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h3>Consulta</h3>
+                <span class="pill" id="doctor-active-pill">Seleccione un paciente</span>
+              </div>
+              <div class="analysis-box" id="doctor-patient-summary"></div>
+              <form id="consultation-form" class="consultation-form">
+                <label>Sintomas<textarea name="symptoms" rows="3"></textarea></label>
+                <label>Diagnostico<textarea name="diagnosis" rows="3" required></textarea></label>
+                <label>Indicaciones<textarea name="treatment_notes" rows="3"></textarea></label>
+                <label>Observaciones<textarea name="notes" rows="2"></textarea></label>
+                <div class="panel-subhead">
+                  <h4>Receta</h4>
+                  <button class="ghost-button" id="add-medicine-button" type="button">Agregar medicamento</button>
+                </div>
+                <div class="medicine-list" id="medicine-list"></div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">Registrar consulta</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-pharmacy">
+          <div class="page-head">
+            <div><h2>Farmacia</h2><p>Busqueda de receta, seleccion de medicamentos y cobro.</p></div>
+          </div>
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-head"><h3>Recetas pendientes</h3></div>
+              <input id="pharmacy-search" placeholder="Buscar paciente, DNI o turno" />
+              <div class="queue-list" id="pharmacy-pending"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h3>Medicamentos disponibles</h3></div>
+              <input id="medication-search" placeholder="Buscar medicamento" />
+              <div class="queue-list" id="pharmacy-medications"></div>
+            </section>
+            <section class="panel wide-panel">
+              <div class="panel-head"><h3>Entregadas</h3></div>
+              <div class="queue-list" id="pharmacy-done"></div>
+            </section>
+            <section class="panel wide-panel">
+              <div class="panel-head"><h3>Transacciones de farmacia</h3></div>
+              <div class="queue-list" id="pharmacy-transactions"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-admin">
+          <div class="page-head">
+            <div><h2>Administracion</h2><p>Gestion operativa, maestros del sistema e inventario.</p></div>
+          </div>
+
+          <nav class="admin-subnav" aria-label="Secciones de administracion">
+            <button class="admin-tab is-active" data-admin-tab="overview" type="button">Resumen</button>
+            <button class="admin-tab" data-admin-tab="patients" type="button">Pacientes</button>
+            <button class="admin-tab" data-admin-tab="workers" type="button">Trabajadores</button>
+            <button class="admin-tab" data-admin-tab="rooms" type="button">Consultorios</button>
+            <button class="admin-tab" data-admin-tab="medications" type="button">Medicamentos</button>
+          </nav>
+
+          <section class="admin-panel is-visible" data-admin-panel="overview">
+            <div class="metric-grid" id="admin-metric-grid"></div>
+            <div class="content-grid two-columns admin-overview">
+              <section class="panel">
+                <div class="panel-head"><h3>Citas pendientes</h3></div>
+                <div class="queue-list" id="admin-pending-appointments"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head"><h3>Ingresos recientes</h3></div>
+                <div class="queue-list" id="admin-revenue-list"></div>
+              </section>
+              <section class="panel wide-panel">
+                <div class="panel-head"><h3>Soporte predictivo ML</h3></div>
+                <div class="ml-grid" id="admin-ml-list"></div>
+                <div id="admin-ml-insights"></div>
+              </section>
+              <section class="panel wide-panel">
+                <div class="panel-head"><h3>Dashboard estadistico ML</h3></div>
+                <div class="ml-dashboard-grid">
+                  <div class="chart-box">
+                    <h4>Prioridad por arbol de decision</h4>
+                    <div id="ml-priority-chart"></div>
+                  </div>
+                  <div class="chart-box">
+                    <h4>Riesgo por regresion logistica</h4>
+                    <div id="ml-risk-chart"></div>
+                  </div>
+                  <div class="chart-box wide-chart">
+                    <h4>Regresion lineal: presion real vs predicha</h4>
+                    <div id="ml-regression-chart"></div>
+                  </div>
+                  <div class="chart-box wide-chart">
+                    <h4>Regresion multiple: riesgo y minutos estimados</h4>
+                    <div id="ml-attention-chart"></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="patients">
+            <section class="panel admin-editor">
+              <div class="panel-head"><h3>Pacientes</h3></div>
+              <form id="admin-patient-form" class="grid-form">
+                <input name="id" type="hidden" />
+                <label>DNI
+                  <div class="inline-field">
+                    <input name="document" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" required />
+                    <button class="secondary-button" data-lookup-dni="admin-patient-form" type="button">Buscar</button>
+                  </div>
+                </label>
+                <label>Nombres<input name="first_name" required readonly /></label>
+                <label>Apellidos<input name="last_name" required readonly /></label>
+                <label>Fecha nac.<input name="birth_date" type="date" readonly /></label>
+                <label>Edad<input name="age" min="1" max="120" type="number" required readonly /></label>
+                <label>Sexo<input name="sex" required readonly value="No especificado" /></label>
+                <label>Telefono<input name="phone" inputmode="numeric" maxlength="9" pattern="[0-9]{9}" required /></label>
+                <div class="form-actions wide">
+                  <button class="secondary-button" data-clear-form="admin-patient-form" type="button">Limpiar</button>
+                  <button class="primary-button" type="submit">Guardar</button>
+                </div>
+              </form>
+              <div class="queue-list" id="admin-patients-list"></div>
+            </section>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="workers">
+            <section class="panel admin-editor">
+              <div class="panel-head"><h3>Trabajadores</h3></div>
+              <form id="worker-form" class="grid-form">
+                <input name="id" type="hidden" />
+                <label>DNI
+                  <div class="inline-field">
+                    <input name="document" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" required />
+                    <button class="secondary-button" data-lookup-dni="worker-form" type="button">Buscar</button>
+                  </div>
+                </label>
+                <label>Nombres<input name="first_name" required readonly /></label>
+                <label>Apellidos<input name="last_name" required readonly /></label>
+                <label>Fecha nac.<input name="birth_date" type="date" readonly /></label>
+                <label>Edad<input name="age" min="18" max="90" type="number" readonly /></label>
+                <label>Sexo<input name="sex" readonly value="No especificado" /></label>
+                <label>Rol<select name="role" required><option value="doctor">Medico</option><option value="reception">Recepcionista</option><option value="triage">Enfermera</option><option value="cashier">Cajero</option><option value="pharmacy">Farmaceutico</option></select></label>
+                <label class="worker-specialty-field">Especialidad<select name="specialty"></select></label>
+                <label>Telefono<input name="phone" inputmode="numeric" maxlength="9" pattern="[0-9]{9}" required /></label>
+                <div class="form-actions wide">
+                  <button class="secondary-button" data-clear-form="worker-form" type="button">Limpiar</button>
+                  <button class="primary-button" type="submit">Guardar</button>
+                </div>
+              </form>
+              <div class="queue-list" id="admin-workers-list"></div>
+            </section>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="rooms">
+            <section class="panel admin-editor">
+              <div class="panel-head"><h3>Consultorios</h3></div>
+              <form id="consultorio-form" class="grid-form">
+                <input name="id" type="hidden" />
+                <label>Nombre<input name="name" required /></label>
+                <label>Piso<input name="floor" required /></label>
+                <label class="wide">Equipamiento<input name="equipment" required /></label>
+                <div class="form-actions wide">
+                  <button class="secondary-button" data-clear-form="consultorio-form" type="button">Limpiar</button>
+                  <button class="primary-button" type="submit">Guardar</button>
+                </div>
+              </form>
+              <div class="queue-list" id="admin-consultorios-list"></div>
+            </section>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="medications">
+            <section class="panel admin-editor">
+              <div class="panel-head"><h3>Medicamentos</h3></div>
+              <form id="medication-form" class="grid-form">
+                <input name="id" type="hidden" />
+                <label>Nombre<input name="name" required /></label>
+                <label>Descripcion<input name="description" required /></label>
+                <label>Precio<input name="price" min="0" step="0.01" type="number" required /></label>
+                <label>Stock<input name="stock" min="0" type="number" required /></label>
+                <div class="form-actions wide">
+                  <button class="secondary-button" data-clear-form="medication-form" type="button">Limpiar</button>
+                  <button class="primary-button" type="submit">Guardar</button>
+                </div>
+              </form>
+              <div class="queue-list" id="admin-medications-list"></div>
+            </section>
+          </section>
+        </section>
+
+        <section class="view display-view" id="view-display">
+          <div class="display-header">
+            <h2>Sala de espera</h2>
+            <p>Clinica San Luis</p>
+          </div>
+          <div class="display-board">
+            <div>
+              <span>Triaje</span>
+              <strong id="display-triage-ticket">--</strong>
+              <p id="display-triage-name">Sin llamado</p>
+            </div>
+            <div>
+              <span>Consultorio</span>
+              <strong id="display-doctor-ticket">--</strong>
+              <p id="display-doctor-name">Sin llamado</p>
+            </div>
+          </div>
+          <div class="display-list" id="display-next-list"></div>
+        </section>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </body>
+</html>

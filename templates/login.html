@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clinica San Luis - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body class="login-page">
+    <main class="login-shell">
+      <section class="login-card">
+        <div class="brand login-brand">
+          <div class="brand-mark"><img src="{{ url_for('static', filename='clinic-logo.jpg') }}" alt="Logo Clinica San Luis" /></div>
+          <div>
+            <h1>Clinica San Luis</h1>
+            <p>Sistema interno de atencion</p>
+          </div>
+        </div>
+        <div class="login-copy">
+          <h2>Inicio de sesion</h2>
+          <p>Acceso por rol para recepcion, caja, triaje, consultorio, farmacia y administracion.</p>
+        </div>
+        <div class="login-error" id="error-message"></div>
+        <form id="login-form" class="login-form">
+          <label>Usuario<input id="username" autocomplete="username" required /></label>
+          <label>Contrasena<input id="password" autocomplete="current-password" type="password" required /></label>
+          <button class="primary-button" id="login-button" type="submit">Iniciar sesion</button>
+        </form>
+        <div class="login-users">
+          <strong>Usuarios de prueba</strong>
+          <span>admin/admin123 · recep/recep123 · caja/caja123</span>
+          <span>triage/triage123 · doctor/doctor123 · farmacia/farm123</span>
+        </div>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script>
+      let toastTimer = null;
+      function escapeHtml(valueText) {
+        return String(valueText ?? "").replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        }[char]));
+      }
+
+      function showToast(message, type = "info") {
+        const toast = document.getElementById("toast");
+        if (!toast) return;
+        const label = {
+          success: "Correcto",
+          error: "Atencion",
+          warning: "Revise",
+          info: "Sistema",
+        }[type] || "Sistema";
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<span>${label}</span><strong>${escapeHtml(message)}</strong>`;
+        toast.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 3200);
+      }
+
+      const pendingToast = localStorage.getItem("clinic_toast");
+      if (pendingToast) {
+        localStorage.removeItem("clinic_toast");
+        showToast(pendingToast, "success");
+      }
+
+      const savedUser = localStorage.getItem("clinic_user");
+      if (savedUser) window.location.href = "/";
+
+      document.getElementById("login-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const button = document.getElementById("login-button");
+        const errorBox = document.getElementById("error-message");
+        button.disabled = true;
+        errorBox.classList.remove("is-visible");
+
+        try {
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: document.getElementById("username").value,
+              password: document.getElementById("password").value,
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.user) throw new Error(data.message || "Credenciales invalidas");
+          localStorage.setItem("clinic_user", JSON.stringify(data.user));
+          if (data.redirect) localStorage.setItem("clinic_redirect", data.redirect.replace("/#", ""));
+          localStorage.setItem("clinic_toast", "Inicio de sesion correcto");
+          window.location.href = "/";
+        } catch (error) {
+          errorBox.textContent = error.message || "Error de conexion";
+          errorBox.classList.add("is-visible");
+          showToast(error.message || "Error de conexion", "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
