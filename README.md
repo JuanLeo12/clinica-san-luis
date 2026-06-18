@@ -31,11 +31,10 @@ python app.py
 
 Abrir `http://localhost:5000`.
 
-Por defecto usa SQLite en `clinic_app.sqlite3`. Para apuntar a otro archivo:
+Por defecto lee variables desde `.env` y usa SQLite en `clinic_app.sqlite3`. Para apuntar a otro archivo:
 
 ```bash
 set DATABASE_PATH=clinic_app.sqlite3
-set CONSULTADNI_TOKEN=TU_TOKEN_DE_CONSULTADNI
 python app.py
 ```
 

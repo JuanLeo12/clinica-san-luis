@@ -7,11 +7,13 @@ from pathlib import Path
 from typing import Any, Dict
 
 import requests
+from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 
 from clinic_ai import ClinicalML
 from storage import create_repository
 
+load_dotenv()
 
 DEFAULT_IOT_DATA = {
     "temperature": 36.5,
