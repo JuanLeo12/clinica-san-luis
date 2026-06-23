@@ -2854,6 +2854,7 @@ const FIELD_MAP = {
   first_name: "nombre",
   last_name: "apellido",
   age: "edad",
+  sex: "sexo",
   phone: "telefono",
   birth_date: "fecha_nacimiento",
   specialty_id: "id_especialidad",

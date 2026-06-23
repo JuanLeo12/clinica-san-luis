@@ -2057,6 +2057,7 @@ class SQLiteRepository(BaseRepository):
     def create_user(self, payload):
         return None
     
+    @staticmethod
     def _next_ticket(conn: sqlite3.Connection) -> str:
         count = conn.execute("SELECT COUNT(*) FROM citas").fetchone()[0] + 1
         return f"A{count:04d}"
@@ -2126,15 +2127,15 @@ class SQLiteRepository(BaseRepository):
         conn: sqlite3.Connection,
         tipo_evento: str,
         entidad: str,
-        entidad_id: Optional[int],
+        id_entidad: Optional[int],
         mensaje: str,
     ) -> None:
         conn.execute(
             """
-            INSERT INTO eventos_auditoria (tipo_evento, entidad, entidad_id, mensaje, fecha_creacion)
+            INSERT INTO eventos_auditoria (tipo_evento, entidad, id_entidad, mensaje, fecha_creacion)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (tipo_evento, entidad, entidad_id, mensaje, utc_now()),
+            (tipo_evento, entidad, id_entidad, mensaje, utc_now()),
         )
 
     @staticmethod
