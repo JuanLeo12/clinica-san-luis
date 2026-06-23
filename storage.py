@@ -13,60 +13,60 @@ import requests
 DEFAULT_SPECIALTIES = [
     {
         "id": 1,
-        "name": "Medicina General",
-        "price": 55.0,
-        "duration_min": 20,
-        "room": "C-101",
-        "doctor_name": "Dra. Valeria Ramos",
+        "nombre": "Medicina General",
+        "precio": 55.0,
+        "duracion_minutos": 20,
+        "consultorio": "C-101",
+        "nombre_medico": "Dra. Valeria Ramos",
     },
     {
         "id": 2,
-        "name": "Pediatria",
-        "price": 70.0,
-        "duration_min": 20,
-        "room": "C-102",
-        "doctor_name": "Dr. Mateo Aguilar",
+        "nombre": "Pediatria",
+        "precio": 70.0,
+        "duracion_minutos": 20,
+        "consultorio": "C-102",
+        "nombre_medico": "Dr. Mateo Aguilar",
     },
     {
         "id": 3,
-        "name": "Cardiologia",
-        "price": 120.0,
-        "duration_min": 30,
-        "room": "C-201",
-        "doctor_name": "Dra. Camila Torres",
+        "nombre": "Cardiologia",
+        "precio": 120.0,
+        "duracion_minutos": 30,
+        "consultorio": "C-201",
+        "nombre_medico": "Dra. Camila Torres",
     },
     {
         "id": 4,
-        "name": "Dermatologia",
-        "price": 90.0,
-        "duration_min": 20,
-        "room": "C-202",
-        "doctor_name": "Dr. Alonso Vega",
+        "nombre": "Dermatologia",
+        "precio": 90.0,
+        "duracion_minutos": 20,
+        "consultorio": "C-202",
+        "nombre_medico": "Dr. Alonso Vega",
     },
     {
         "id": 5,
-        "name": "Ginecologia",
-        "price": 100.0,
-        "duration_min": 25,
-        "room": "C-203",
-        "doctor_name": "Dra. Sofia Paredes",
+        "nombre": "Ginecologia",
+        "precio": 100.0,
+        "duracion_minutos": 25,
+        "consultorio": "C-203",
+        "nombre_medico": "Dra. Sofia Paredes",
     },
     {
         "id": 6,
-        "name": "Traumatologia",
-        "price": 110.0,
-        "duration_min": 25,
-        "room": "C-204",
-        "doctor_name": "Dr. Diego Salazar",
+        "nombre": "Traumatologia",
+        "precio": 110.0,
+        "duracion_minutos": 25,
+        "consultorio": "C-204",
+        "nombre_medico": "Dr. Diego Salazar",
     },
 ]
 DEFAULT_USERS = [
-    {"id": 1, "username": "admin", "password": "admin123", "full_name": "Administrador", "role": "admin"},
-    {"id": 2, "username": "recep", "password": "recep123", "full_name": "Maria Lopez", "role": "reception"},
-    {"id": 3, "username": "caja", "password": "caja123", "full_name": "Carlos Perez", "role": "cashier"},
-    {"id": 4, "username": "triage", "password": "triage123", "full_name": "Ana Torres", "role": "triage"},
-    {"id": 5, "username": "doctor", "password": "doctor123", "full_name": "Dr. Roberto Silva", "role": "doctor"},
-    {"id": 6, "username": "farmacia", "password": "farm123", "full_name": "Laura Gomez", "role": "pharmacy"},
+    {"id": 1, "nombre_usuario": "admin", "contrasena": "admin123", "nombre_completo": "Administrador", "rol": "admin"},
+    {"id": 2, "nombre_usuario": "recep", "contrasena": "recep123", "nombre_completo": "Maria Lopez", "rol": "reception"},
+    {"id": 3, "nombre_usuario": "caja", "contrasena": "caja123", "nombre_completo": "Carlos Perez", "rol": "cashier"},
+    {"id": 4, "nombre_usuario": "triedad", "contrasena": "triedad123", "nombre_completo": "Ana Torres", "rol": "triedad"},
+    {"id": 5, "nombre_usuario": "doctor", "contrasena": "doctor123", "nombre_completo": "Dr. Roberto Silva", "rol": "doctor"},
+    {"id": 6, "nombre_usuario": "farmacia", "contrasena": "farm123", "nombre_completo": "Laura Gomez", "rol": "pharmacy"},
 ]
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -76,84 +76,84 @@ def local_now() -> datetime:
     return datetime.now()
 
 
-def _clean_digits(value: Any) -> str:
-    return "".join(char for char in str(value or "").strip() if char.isdigit())
+def _clean_digits(valor: Any) -> str:
+    return "".join(char for char in str(valor or "").strip() if char.isdigit())
 
 
-def _validate_document(value: Any, label: str = "DNI") -> str:
-    document = _clean_digits(value)
-    if len(document) != 8:
+def _validate_documento(valor: Any, label: str = "DNI") -> str:
+    documento = _clean_digits(valor)
+    if len(documento) != 8:
         raise ValueError(f"{label} debe tener 8 digitos.")
-    return document
+    return documento
 
 
-def _validate_phone(value: Any) -> str:
-    phone = _clean_digits(value)
-    if len(phone) != 9:
+def _validate_telefono(valor: Any) -> str:
+    telefono = _clean_digits(valor)
+    if len(telefono) != 9:
         raise ValueError("Telefono debe tener 9 digitos y no aceptar letras.")
-    return phone
+    return telefono
 
 
-def _required_text(value: Any, label: str) -> str:
-    text = str(value or "").strip()
+def _required_text(valor: Any, label: str) -> str:
+    text = str(valor or "").strip()
     if not text:
         raise ValueError(f"{label} es obligatorio.")
     return text
 
 
-def _validate_age(value: Any) -> int:
-    age = int(value or 0)
-    if age < 1 or age > 120:
+def _validate_edad(valor: Any) -> int:
+    edad = int(valor or 0)
+    if edad < 1 or edad > 120:
         raise ValueError("Edad debe estar entre 1 y 120.")
-    return age
+    return edad
 
 
-def _optional_age(value: Any) -> Optional[int]:
-    if value in (None, ""):
+def _optional_edad(valor: Any) -> Optional[int]:
+    if valor in (None, ""):
         return None
-    return _validate_age(value)
+    return _validate_edad(valor)
 
 
-def _optional_date_text(value: Any) -> str:
-    return str(value or "").strip()[:10]
+def _optional_date_text(valor: Any) -> str:
+    return str(valor or "").strip()[:10]
 
 
 def _validate_patient_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     return {
-        "document": _validate_document(payload.get("document")),
-        "first_name": _required_text(payload.get("first_name"), "Nombres"),
-        "last_name": _required_text(payload.get("last_name"), "Apellidos"),
-        "age": _validate_age(payload.get("age")),
-        "sex": _required_text(payload.get("sex") or "No especificado", "Sexo"),
-        "phone": _validate_phone(payload.get("phone")),
-        "birth_date": _optional_date_text(payload.get("birth_date")),
+        "documento": _validate_documento(payload.get("documento")),
+        "nombre": _required_text(payload.get("nombre"), "Nombres"),
+        "apellido": _required_text(payload.get("apellido"), "Apellidos"),
+        "edad": _validate_edad(payload.get("edad")),
+        "sexo": _required_text(payload.get("sexo") or "No especificado", "Sexo"),
+        "telefono": _validate_telefono(payload.get("telefono")),
+        "fecha_nacimiento": _optional_date_text(payload.get("fecha_nacimiento")),
     }
 
 
 def _validate_worker_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
-    role = _required_text(payload.get("role"), "Rol")
+    rol = _required_text(payload.get("rol"), "Rol")
     specialty = str(payload.get("specialty") or "").strip()
-    if role == "doctor" and not specialty:
+    if rol == "doctor" and not specialty:
         raise ValueError("Especialidad es obligatoria para trabajadores medicos.")
     return {
-        "document": _validate_document(payload.get("document")),
-        "first_name": _required_text(payload.get("first_name"), "Nombres"),
-        "last_name": _required_text(payload.get("last_name"), "Apellidos"),
-        "role": role,
-        "specialty": specialty if role == "doctor" else "",
-        "phone": _validate_phone(payload.get("phone")),
-        "age": _optional_age(payload.get("age")),
-        "sex": _required_text(payload.get("sex") or "No especificado", "Sexo"),
-        "birth_date": _optional_date_text(payload.get("birth_date")),
+        "documento": _validate_documento(payload.get("documento")),
+        "nombre": _required_text(payload.get("nombre"), "Nombres"),
+        "apellido": _required_text(payload.get("apellido"), "Apellidos"),
+        "rol": rol,
+        "specialty": specialty if rol == "doctor" else "",
+        "telefono": _validate_telefono(payload.get("telefono")),
+        "edad": _optional_edad(payload.get("edad")),
+        "sexo": _required_text(payload.get("sexo") or "No especificado", "Sexo"),
+        "fecha_nacimiento": _optional_date_text(payload.get("fecha_nacimiento")),
     }
 
 
 def create_repository() -> "BaseRepository":
-    storage_mode = os.getenv("APP_STORAGE", "sqlite").lower()
-    if storage_mode == "supabase":
+    storedad_mode = os.getenv("APP_STORAGE", "sqlite").lower()
+    if storedad_mode == "supabase":
         return SupabaseRepository(
             url=os.environ["SUPABASE_URL"],
-            key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
+            clave=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
         )
     db_path = os.getenv("DATABASE_PATH")
     if not db_path:
@@ -168,10 +168,10 @@ class BaseRepository:
     def snapshot(self) -> Dict[str, Any]:
         raise NotImplementedError
 
-    def list_specialties(self) -> List[Dict[str, Any]]:
+    def list_especialidades(self) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
-    def get_appointment(self, appointment_id: int) -> Optional[Dict[str, Any]]:
+    def get_appointment(self, id_cita: int) -> Optional[Dict[str, Any]]:
         raise NotImplementedError
 
     def create_patient_and_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -179,48 +179,48 @@ class BaseRepository:
 
     def mark_paid(
         self,
-        appointment_id: int,
-        payment_method: str = "Efectivo",
-        created_by: Optional[str] = None,
+        id_cita: int,
+        metodo_pago: str = "Efectivo",
+        creado_por: Optional[str] = None,
     ) -> Dict[str, Any]:
         raise NotImplementedError
 
-    def set_active_triage(self, appointment_id: int) -> Dict[str, Any]:
+    def set_activo_triedad(self, id_cita: int) -> Dict[str, Any]:
         raise NotImplementedError
 
-    def capture_triage(
+    def capture_triedad(
         self,
-        appointment_id: int,
+        id_cita: int,
         vitals: Dict[str, Any],
         analysis: Dict[str, Any],
-        source: str,
+        fuente: str,
     ) -> Dict[str, Any]:
         raise NotImplementedError
 
-    def create_consultation(self, appointment_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def create_consultation(self, id_cita: int, payload: Dict[str, Any]) -> Dict[str, Any]:
         raise NotImplementedError
 
     def dispense_prescription(
         self,
-        prescription_id: int,
-        payment_method: str = "Efectivo",
-        created_by: Optional[str] = None,
+        id_receta: int,
+        metodo_pago: str = "Efectivo",
+        creado_por: Optional[str] = None,
     ) -> Dict[str, Any]:
         raise NotImplementedError
 
-    def list_transactions(self) -> List[Dict[str, Any]]:
+    def list_transacciones(self) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
-    def get_setting(self, key: str) -> Optional[str]:
+    def get_setting(self, clave: str) -> Optional[str]:
         raise NotImplementedError
 
-    def set_setting(self, key: str, value: Optional[str]) -> None:
+    def set_setting(self, clave: str, valor: Optional[str]) -> None:
         raise NotImplementedError
 
-    def authenticate_user(self, username: str, password: str) -> Optional[Dict[str, Any]]:
+    def authenticate_user(self, nombre_usuario: str, contrasena: str) -> Optional[Dict[str, Any]]:
         raise NotImplementedError
 
-    def list_users(self) -> List[Dict[str, Any]]:
+    def list_usuarios(self) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
 
@@ -231,393 +231,395 @@ class SQLiteRepository(BaseRepository):
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.db_path)
         connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("PRAGMA foreign_claves = ON")
         return connection
 
     def setup(self) -> None:
         with self._connect() as conn:
             conn.executescript(
                 """
-                CREATE TABLE IF NOT EXISTS patients (
+                CREATE TABLE IF NOT EXISTS pacientes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    document TEXT NOT NULL UNIQUE,
-                    first_name TEXT NOT NULL,
-                    last_name TEXT NOT NULL,
-                    age INTEGER NOT NULL,
-                    sex TEXT NOT NULL,
-                    birth_date TEXT,
-                    phone TEXT,
-                    active INTEGER NOT NULL DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    documento TEXT NOT NULL UNIQUE,
+                    nombre TEXT NOT NULL,
+                    apellido TEXT NOT NULL,
+                    edad INTEGER NOT NULL,
+                    sexo TEXT NOT NULL,
+                    fecha_nacimiento TEXT,
+                    telefono TEXT,
+                    peso REAL,
+                    altura REAL,
+                    activo INTEGER NOT NULL DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS specialties (
+                CREATE TABLE IF NOT EXISTS especialidades (
                     id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    price REAL NOT NULL,
-                    duration_min INTEGER NOT NULL,
-                    room TEXT NOT NULL,
-                    doctor_name TEXT NOT NULL
+                    nombre TEXT NOT NULL,
+                    precio REAL NOT NULL,
+                    duracion_minutos INTEGER NOT NULL,
+                    consultorio TEXT NOT NULL,
+                    nombre_medico TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS appointments (
+                CREATE TABLE IF NOT EXISTS citas (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket TEXT NOT NULL UNIQUE,
-                    patient_id INTEGER NOT NULL REFERENCES patients(id),
-                    specialty_id INTEGER NOT NULL REFERENCES specialties(id),
-                    status TEXT NOT NULL,
-                    payment_status TEXT NOT NULL,
-                    triage_status TEXT NOT NULL,
-                    consultation_status TEXT NOT NULL,
-                    pharmacy_status TEXT NOT NULL,
-                    room TEXT,
-                    scheduled_at TEXT,
-                    receipt_code TEXT,
-                    created_at TEXT NOT NULL,
-                    paid_at TEXT
+                    id_paciente INTEGER NOT NULL REFERENCES pacientes(id),
+                    id_especialidad INTEGER NOT NULL REFERENCES especialidades(id),
+                    estado TEXT NOT NULL,
+                    estado_pago TEXT NOT NULL,
+                    estado_triaje TEXT NOT NULL,
+                    estado_consulta TEXT NOT NULL,
+                    estado_farmacia TEXT NOT NULL,
+                    consultorio TEXT,
+                    fecha_programada TEXT,
+                    codigo_recibo TEXT,
+                    fecha_creacion TEXT NOT NULL,
+                    fecha_pago TEXT
                 );
 
-                CREATE TABLE IF NOT EXISTS triage_records (
+                CREATE TABLE IF NOT EXISTS expedientes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    appointment_id INTEGER NOT NULL UNIQUE REFERENCES appointments(id),
-                    temperature REAL NOT NULL,
-                    heart_rate INTEGER NOT NULL,
+                    id_cita INTEGER NOT NULL UNIQUE REFERENCES citas(id),
+                    temperatura REAL NOT NULL,
+                    ritmo_cardiaco INTEGER NOT NULL,
                     spo2 INTEGER NOT NULL,
-                    systolic INTEGER NOT NULL,
-                    diastolic INTEGER NOT NULL,
-                    weight REAL NOT NULL,
-                    height REAL NOT NULL,
-                    bmi REAL NOT NULL,
-                    priority TEXT NOT NULL,
-                    risk_score REAL NOT NULL,
-                    risk_label TEXT NOT NULL,
-                    predicted_systolic REAL NOT NULL,
-                    estimated_attention_minutes REAL NOT NULL,
-                    decision_summary TEXT NOT NULL,
-                    analysis_json TEXT NOT NULL,
-                    source TEXT NOT NULL,
-                    captured_at TEXT NOT NULL
+                    sistolica INTEGER NOT NULL,
+                    diastolica INTEGER NOT NULL,
+                    peso REAL NOT NULL,
+                    altura REAL NOT NULL,
+                    imc REAL NOT NULL,
+                    prioridad TEXT NOT NULL,
+                    puntuacion_riesgo REAL NOT NULL,
+                    etiqueta_riesgo TEXT NOT NULL,
+                    sistolica_predicha REAL NOT NULL,
+                    minutos_estimados REAL NOT NULL,
+                    resumen_decision TEXT NOT NULL,
+                    analisis_json TEXT NOT NULL,
+                    fuente TEXT NOT NULL,
+                    fecha_captura TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS consultations (
+                CREATE TABLE IF NOT EXISTS consultas (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    appointment_id INTEGER NOT NULL UNIQUE REFERENCES appointments(id),
-                    doctor_name TEXT NOT NULL,
-                    symptoms TEXT NOT NULL,
-                    diagnosis TEXT NOT NULL,
-                    treatment_notes TEXT NOT NULL,
-                    notes TEXT,
-                    created_at TEXT NOT NULL
+                    id_cita INTEGER NOT NULL UNIQUE REFERENCES citas(id),
+                    nombre_medico TEXT NOT NULL,
+                    sintomas TEXT NOT NULL,
+                    diagnostico TEXT NOT NULL,
+                    tratamiento TEXT NOT NULL,
+                    notas TEXT,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS prescriptions (
+                CREATE TABLE IF NOT EXISTS recetas (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    appointment_id INTEGER NOT NULL REFERENCES appointments(id),
-                    consultation_id INTEGER NOT NULL REFERENCES consultations(id),
-                    status TEXT NOT NULL,
+                    id_cita INTEGER NOT NULL REFERENCES citas(id),
+                    id_consulta INTEGER NOT NULL REFERENCES consultas(id),
+                    estado TEXT NOT NULL,
                     total REAL NOT NULL,
-                    created_at TEXT NOT NULL,
-                    dispensed_at TEXT
+                    fecha_creacion TEXT NOT NULL,
+                    fecha_dispensacion TEXT
                 );
 
-                CREATE TABLE IF NOT EXISTS prescription_items (
+                CREATE TABLE IF NOT EXISTS receta_items (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    prescription_id INTEGER NOT NULL REFERENCES prescriptions(id) ON DELETE CASCADE,
-                    medicine TEXT NOT NULL,
-                    dosage TEXT NOT NULL,
-                    frequency TEXT NOT NULL,
-                    days INTEGER NOT NULL,
-                    quantity INTEGER NOT NULL,
-                    unit_price REAL NOT NULL
+                    id_receta INTEGER NOT NULL REFERENCES recetas(id) ON DELETE CASCADE,
+                    medicamento TEXT NOT NULL,
+                    dosis TEXT NOT NULL,
+                    frecuencia TEXT NOT NULL,
+                    dias INTEGER NOT NULL,
+                    cantidad INTEGER NOT NULL,
+                    unit_precio REAL NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS transactions (
+                CREATE TABLE IF NOT EXISTS transacciones (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    transaction_code TEXT NOT NULL UNIQUE,
-                    module TEXT NOT NULL,
-                    reference_type TEXT NOT NULL,
-                    reference_id INTEGER NOT NULL,
-                    patient_document TEXT NOT NULL,
-                    patient_name TEXT NOT NULL,
-                    concept TEXT NOT NULL,
-                    amount REAL NOT NULL,
-                    payment_method TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    created_by TEXT,
-                    created_at TEXT NOT NULL
+                    codigo_transaccion TEXT NOT NULL UNIQUE,
+                    modulo TEXT NOT NULL,
+                    tipo_referencia TEXT NOT NULL,
+                    id_referencia INTEGER NOT NULL,
+                    documento_paciente TEXT NOT NULL,
+                    nombre_paciente TEXT NOT NULL,
+                    concepto TEXT NOT NULL,
+                    monto REAL NOT NULL,
+                    metodo_pago TEXT NOT NULL,
+                    estado TEXT NOT NULL,
+                    creado_por TEXT,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS users (
+                CREATE TABLE IF NOT EXISTS usuarios (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT NOT NULL UNIQUE,
-                    password TEXT NOT NULL,
-                    full_name TEXT NOT NULL,
-                    role TEXT NOT NULL,
-                    active INTEGER NOT NULL DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    nombre_usuario TEXT NOT NULL UNIQUE,
+                    contrasena TEXT NOT NULL,
+                    nombre_completo TEXT NOT NULL,
+                    rol TEXT NOT NULL,
+                    activo INTEGER NOT NULL DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS settings (
-                    key TEXT PRIMARY KEY,
-                    value TEXT
+                CREATE TABLE IF NOT EXISTS configuracion (
+                    clave TEXT PRIMARY KEY,
+                    valor TEXT
                 );
 
-                CREATE TABLE IF NOT EXISTS audit_events (
+                CREATE TABLE IF NOT EXISTS eventos_auditoria (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_type TEXT NOT NULL,
-                    entity TEXT NOT NULL,
-                    entity_id INTEGER,
-                    message TEXT NOT NULL,
-                    created_at TEXT NOT NULL
+                    tipo_evento TEXT NOT NULL,
+                    entidad TEXT NOT NULL,
+                    entidad_id INTEGER,
+                    mensaje TEXT NOT NULL,
+                    fecha_creacion TEXT NOT NULL
                 );
-                CREATE TABLE IF NOT EXISTS workers (
+                CREATE TABLE IF NOT EXISTS trabajadores (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    document TEXT NOT NULL UNIQUE,
-                    first_name TEXT NOT NULL,
-                    last_name TEXT NOT NULL,
-                    role TEXT NOT NULL,
+                    documento TEXT NOT NULL UNIQUE,
+                    nombre TEXT NOT NULL,
+                    apellido TEXT NOT NULL,
+                    rol TEXT NOT NULL,
                     specialty TEXT,
-                    age INTEGER,
-                    sex TEXT DEFAULT 'No especificado',
-                    birth_date TEXT,
-                    phone TEXT,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    edad INTEGER,
+                    sexo TEXT DEFAULT 'No especificado',
+                    fecha_nacimiento TEXT,
+                    telefono TEXT,
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS consultorios (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
                     floor TEXT,
                     equipment TEXT,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS medications (
+                CREATE TABLE IF NOT EXISTS medicamentos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
                     description TEXT,
-                    price REAL DEFAULT 0,
+                    precio REAL DEFAULT 0,
                     stock INTEGER DEFAULT 0,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS workers (
+                CREATE TABLE IF NOT EXISTS trabajadores (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    document TEXT NOT NULL UNIQUE,
-                    first_name TEXT NOT NULL,
-                    last_name TEXT NOT NULL,
-                    role TEXT NOT NULL,
+                    documento TEXT NOT NULL UNIQUE,
+                    nombre TEXT NOT NULL,
+                    apellido TEXT NOT NULL,
+                    rol TEXT NOT NULL,
                     specialty TEXT,
-                    phone TEXT,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    telefono TEXT,
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS consultorios (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
                     floor TEXT,
                     equipment TEXT,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS medications (
+                CREATE TABLE IF NOT EXISTS medicamentos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
                     description TEXT,
-                    price REAL DEFAULT 0,
+                    precio REAL DEFAULT 0,
                     stock INTEGER DEFAULT 0,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS workers (
+                CREATE TABLE IF NOT EXISTS trabajadores (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    document TEXT NOT NULL UNIQUE,
-                    first_name TEXT NOT NULL,
-                    last_name TEXT NOT NULL,
-                    role TEXT NOT NULL,
+                    documento TEXT NOT NULL UNIQUE,
+                    nombre TEXT NOT NULL,
+                    apellido TEXT NOT NULL,
+                    rol TEXT NOT NULL,
                     specialty TEXT,
-                    phone TEXT,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    telefono TEXT,
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS consultorios (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
                     floor TEXT,
                     equipment TEXT,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS medications (
+                CREATE TABLE IF NOT EXISTS medicamentos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
                     description TEXT,
-                    price REAL DEFAULT 0,
+                    precio REAL DEFAULT 0,
                     stock INTEGER DEFAULT 0,
-                    active INTEGER DEFAULT 1,
-                    created_at TEXT NOT NULL
+                    activo INTEGER DEFAULT 1,
+                    fecha_creacion TEXT NOT NULL
                 );
 
                 """
             )
             patient_columns = {
-                row["name"] for row in conn.execute("PRAGMA table_info(patients)").fetchall()
+                row[1] for row in conn.execute("PRAGMA table_info(pacientes)").fetchall()
             }
-            if "active" not in patient_columns:
-                conn.execute("ALTER TABLE patients ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
-            if "birth_date" not in patient_columns:
-                conn.execute("ALTER TABLE patients ADD COLUMN birth_date TEXT")
+            if "activo" not in patient_columns:
+                conn.execute("ALTER TABLE pacientes ADD COLUMN activo INTEGER NOT NULL DEFAULT 1")
+            if "fecha_nacimiento" not in patient_columns:
+                conn.execute("ALTER TABLE pacientes ADD COLUMN fecha_nacimiento TEXT")
 
             worker_columns = {
-                row["name"] for row in conn.execute("PRAGMA table_info(workers)").fetchall()
+                row[1] for row in conn.execute("PRAGMA table_info(trabajadores)").fetchall()
             }
-            if "age" not in worker_columns:
-                conn.execute("ALTER TABLE workers ADD COLUMN age INTEGER")
-            if "sex" not in worker_columns:
-                conn.execute("ALTER TABLE workers ADD COLUMN sex TEXT DEFAULT 'No especificado'")
-            if "birth_date" not in worker_columns:
-                conn.execute("ALTER TABLE workers ADD COLUMN birth_date TEXT")
-            existing = conn.execute("SELECT COUNT(*) FROM specialties").fetchone()[0]
+            if "edad" not in worker_columns:
+                conn.execute("ALTER TABLE trabajadores ADD COLUMN edad INTEGER")
+            if "sexo" not in worker_columns:
+                conn.execute("ALTER TABLE trabajadores ADD COLUMN sexo TEXT DEFAULT 'No especificado'")
+            if "fecha_nacimiento" not in worker_columns:
+                conn.execute("ALTER TABLE trabajadores ADD COLUMN fecha_nacimiento TEXT")
+            existing = conn.execute("SELECT COUNT(*) FROM especialidades").fetchone()[0]
             if existing == 0:
                 conn.executemany(
                     """
-                    INSERT INTO specialties (id, name, price, duration_min, room, doctor_name)
-                    VALUES (:id, :name, :price, :duration_min, :room, :doctor_name)
+                    INSERT INTO especialidades (id, nombre, precio, duracion_minutos, consultorio, nombre_medico)
+                    VALUES (:id, :nombre, :precio, :duracion_minutos, :consultorio, :nombre_medico)
                     """,
                     DEFAULT_SPECIALTIES,
                 )
-            existing_user = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+            existing_user = conn.execute("SELECT COUNT(*) FROM usuarios").fetchone()[0]
             if existing_user == 0:
                 conn.executemany(
                     """
-                    INSERT INTO users (id, username, password, full_name, role, active, created_at)
-                    VALUES (:id, :username, :password, :full_name, :role, :active, :created_at)
+                    INSERT INTO usuarios (id, nombre_usuario, contrasena, nombre_completo, rol, activo, fecha_creacion)
+                    VALUES (:id, :nombre_usuario, :contrasena, :nombre_completo, :rol, :activo, :fecha_creacion)
                     """,
                     [
-                        {"id": 1, "username": "admin", "password": "admin123", "full_name": "Administrador", "role": "admin", "active": 1, "created_at": utc_now()},
-                        {"id": 2, "username": "recep", "password": "recep123", "full_name": "Maria Lopez", "role": "reception", "active": 1, "created_at": utc_now()},
-                        {"id": 3, "username": "caja", "password": "caja123", "full_name": "Carlos Perez", "role": "cashier", "active": 1, "created_at": utc_now()},
-                        {"id": 4, "username": "triage", "password": "triage123", "full_name": "Ana Torres", "role": "triage", "active": 1, "created_at": utc_now()},
-                        {"id": 5, "username": "doctor", "password": "doctor123", "full_name": "Dr. Roberto Silva", "role": "doctor", "active": 1, "created_at": utc_now()},
-                        {"id": 6, "username": "farmacia", "password": "farm123", "full_name": "Laura Gomez", "role": "pharmacy", "active": 1, "created_at": utc_now()},
+                        {"id": 1, "nombre_usuario": "admin", "contrasena": "admin123", "nombre_completo": "Administrador", "rol": "admin", "activo": 1, "fecha_creacion": utc_now()},
+                        {"id": 2, "nombre_usuario": "recep", "contrasena": "recep123", "nombre_completo": "Maria Lopez", "rol": "reception", "activo": 1, "fecha_creacion": utc_now()},
+                        {"id": 3, "nombre_usuario": "caja", "contrasena": "caja123", "nombre_completo": "Carlos Perez", "rol": "cashier", "activo": 1, "fecha_creacion": utc_now()},
+                        {"id": 4, "nombre_usuario": "triedad", "contrasena": "triedad123", "nombre_completo": "Ana Torres", "rol": "triedad", "activo": 1, "fecha_creacion": utc_now()},
+                        {"id": 5, "nombre_usuario": "doctor", "contrasena": "doctor123", "nombre_completo": "Dr. Roberto Silva", "rol": "doctor", "activo": 1, "fecha_creacion": utc_now()},
+                        {"id": 6, "nombre_usuario": "farmacia", "contrasena": "farm123", "nombre_completo": "Laura Gomez", "rol": "pharmacy", "activo": 1, "fecha_creacion": utc_now()},
                     ],
                 )
-            if conn.execute("SELECT COUNT(*) FROM workers").fetchone()[0] == 0:
+            if conn.execute("SELECT COUNT(*) FROM trabajadores").fetchone()[0] == 0:
                 conn.executemany(
                     """
-                    INSERT INTO workers (document, first_name, last_name, role, specialty, phone, active, created_at)
-                    VALUES (:document, :first_name, :last_name, :role, :specialty, :phone, 1, :created_at)
+                    INSERT INTO trabajadores (documento, nombre, apellido, rol, specialty, telefono, activo, fecha_creacion)
+                    VALUES (:documento, :nombre, :apellido, :rol, :specialty, :telefono, 1, :fecha_creacion)
                     """,
                     [
-                        {"document": "44556677", "first_name": "Valeria", "last_name": "Ramos", "role": "doctor", "specialty": "Medicina General", "phone": "987654321", "created_at": utc_now()},
-                        {"document": "45678912", "first_name": "Mateo", "last_name": "Aguilar", "role": "doctor", "specialty": "Pediatria", "phone": "987111222", "created_at": utc_now()},
-                        {"document": "47889900", "first_name": "Ana", "last_name": "Torres", "role": "triage", "specialty": "Enfermeria", "phone": "986222333", "created_at": utc_now()},
-                        {"document": "48990011", "first_name": "Maria", "last_name": "Lopez", "role": "reception", "specialty": "", "phone": "985333444", "created_at": utc_now()},
-                        {"document": "49001122", "first_name": "Carlos", "last_name": "Perez", "role": "cashier", "specialty": "", "phone": "984444555", "created_at": utc_now()},
-                        {"document": "50112233", "first_name": "Laura", "last_name": "Gomez", "role": "pharmacy", "specialty": "Farmacia", "phone": "983555666", "created_at": utc_now()},
+                        {"documento": "44556677", "nombre": "Valeria", "apellido": "Ramos", "rol": "doctor", "specialty": "Medicina General", "telefono": "987654321", "fecha_creacion": utc_now()},
+                        {"documento": "45678912", "nombre": "Mateo", "apellido": "Aguilar", "rol": "doctor", "specialty": "Pediatria", "telefono": "987111222", "fecha_creacion": utc_now()},
+                        {"documento": "47889900", "nombre": "Ana", "apellido": "Torres", "rol": "triedad", "specialty": "Enfermeria", "telefono": "986222333", "fecha_creacion": utc_now()},
+                        {"documento": "48990011", "nombre": "Maria", "apellido": "Lopez", "rol": "reception", "specialty": "", "telefono": "985333444", "fecha_creacion": utc_now()},
+                        {"documento": "49001122", "nombre": "Carlos", "apellido": "Perez", "rol": "cashier", "specialty": "", "telefono": "984444555", "fecha_creacion": utc_now()},
+                        {"documento": "50112233", "nombre": "Laura", "apellido": "Gomez", "rol": "pharmacy", "specialty": "Farmacia", "telefono": "983555666", "fecha_creacion": utc_now()},
                     ],
                 )
             if conn.execute("SELECT COUNT(*) FROM consultorios").fetchone()[0] == 0:
                 conn.executemany(
                     """
-                    INSERT INTO consultorios (name, floor, equipment, active, created_at)
-                    VALUES (:name, :floor, :equipment, 1, :created_at)
+                    INSERT INTO consultorios (nombre, floor, equipment, activo, fecha_creacion)
+                    VALUES (:nombre, :floor, :equipment, 1, :fecha_creacion)
                     """,
                     [
-                        {"name": "C-101", "floor": "Piso 1", "equipment": "Camilla, tensiometro, PC", "created_at": utc_now()},
-                        {"name": "C-102", "floor": "Piso 1", "equipment": "Pediatria, balanza pediatrica", "created_at": utc_now()},
-                        {"name": "C-201", "floor": "Piso 2", "equipment": "ECG, monitor cardiaco", "created_at": utc_now()},
-                        {"name": "Triage 01", "floor": "Piso 1", "equipment": "IoT signos vitales, oximetro", "created_at": utc_now()},
+                        {"nombre": "C-101", "floor": "Piso 1", "equipment": "Camilla, tensiometro, PC", "fecha_creacion": utc_now()},
+                        {"nombre": "C-102", "floor": "Piso 1", "equipment": "Pediatria, balanza pediatrica", "fecha_creacion": utc_now()},
+                        {"nombre": "C-201", "floor": "Piso 2", "equipment": "ECG, monitor cardiaco", "fecha_creacion": utc_now()},
+                        {"nombre": "Triedad 01", "floor": "Piso 1", "equipment": "IoT signos vitales, oximetro", "fecha_creacion": utc_now()},
                     ],
                 )
-            if conn.execute("SELECT COUNT(*) FROM medications").fetchone()[0] == 0:
+            if conn.execute("SELECT COUNT(*) FROM medicamentos").fetchone()[0] == 0:
                 conn.executemany(
                     """
-                    INSERT INTO medications (name, description, price, stock, active, created_at)
-                    VALUES (:name, :description, :price, :stock, 1, :created_at)
+                    INSERT INTO medicamentos (nombre, description, precio, stock, activo, fecha_creacion)
+                    VALUES (:nombre, :description, :precio, :stock, 1, :fecha_creacion)
                     """,
                     [
-                        {"name": "Paracetamol 500 mg", "description": "Analgesico y antipiretico", "price": 1.50, "stock": 120, "created_at": utc_now()},
-                        {"name": "Ibuprofeno 400 mg", "description": "Antiinflamatorio", "price": 2.20, "stock": 80, "created_at": utc_now()},
-                        {"name": "Amoxicilina 500 mg", "description": "Antibiotico", "price": 3.80, "stock": 60, "created_at": utc_now()},
-                        {"name": "Loratadina 10 mg", "description": "Antihistaminico", "price": 1.80, "stock": 90, "created_at": utc_now()},
-                        {"name": "Suero oral", "description": "Rehidratacion oral", "price": 4.50, "stock": 45, "created_at": utc_now()},
+                        {"nombre": "Paracetamol 500 mg", "description": "Analgesico y antipiretico", "precio": 1.50, "stock": 120, "fecha_creacion": utc_now()},
+                        {"nombre": "Ibuprofeno 400 mg", "description": "Antiinflamatorio", "precio": 2.20, "stock": 80, "fecha_creacion": utc_now()},
+                        {"nombre": "Amoxicilina 500 mg", "description": "Antibiotico", "precio": 3.80, "stock": 60, "fecha_creacion": utc_now()},
+                        {"nombre": "Loratadina 10 mg", "description": "Antihistaminico", "precio": 1.80, "stock": 90, "fecha_creacion": utc_now()},
+                        {"nombre": "Suero oral", "description": "Rehidratacion oral", "precio": 4.50, "stock": 45, "fecha_creacion": utc_now()},
                     ],
                 )
-            if conn.execute("SELECT COUNT(*) FROM patients").fetchone()[0] == 0:
+            if conn.execute("SELECT COUNT(*) FROM pacientes").fetchone()[0] == 0:
                 conn.executemany(
                     """
-                    INSERT INTO patients (document, first_name, last_name, age, sex, phone, active, created_at)
-                    VALUES (:document, :first_name, :last_name, :age, :sex, :phone, 1, :created_at)
+                    INSERT INTO pacientes (documento, nombre, apellido, edad, sexo, telefono, activo, fecha_creacion)
+                    VALUES (:documento, :nombre, :apellido, :edad, :sexo, :telefono, 1, :fecha_creacion)
                     """,
                     [
-                        {"document": "70123456", "first_name": "Lucia", "last_name": "Herrera", "age": 28, "sex": "Femenino", "phone": "999111222", "created_at": utc_now()},
-                        {"document": "70456789", "first_name": "Jorge", "last_name": "Salinas", "age": 46, "sex": "Masculino", "phone": "999333444", "created_at": utc_now()},
-                        {"document": "70890123", "first_name": "Elena", "last_name": "Quispe", "age": 67, "sex": "Femenino", "phone": "999555666", "created_at": utc_now()},
+                        {"documento": "70123456", "nombre": "Lucia", "apellido": "Herrera", "edad": 28, "sexo": "Femenino", "telefono": "999111222", "fecha_creacion": utc_now()},
+                        {"documento": "70456789", "nombre": "Jorge", "apellido": "Salinas", "edad": 46, "sexo": "Masculino", "telefono": "999333444", "fecha_creacion": utc_now()},
+                        {"documento": "70890123", "nombre": "Elena", "apellido": "Quispe", "edad": 67, "sexo": "Femenino", "telefono": "999555666", "fecha_creacion": utc_now()},
                     ],
                 )
-                rows = conn.execute("SELECT id FROM patients ORDER BY id").fetchall()
-                demo_appointments = [
+                rows = conn.execute("SELECT id FROM pacientes ORDER BY id").fetchall()
+                demo_citas = [
                     ("A0001", rows[0]["id"], 1, "registered", "pending", "not_started", "not_started", "none"),
                     ("A0002", rows[1]["id"], 3, "paid", "paid", "waiting", "not_started", "none"),
-                    ("A0003", rows[2]["id"], 1, "triaged", "paid", "done", "waiting", "none"),
+                    ("A0003", rows[2]["id"], 1, "triedadd", "paid", "done", "waiting", "none"),
                 ]
                 conn.executemany(
                     """
-                    INSERT INTO appointments (
-                        ticket, patient_id, specialty_id, status, payment_status, triage_status,
-                        consultation_status, pharmacy_status, room, scheduled_at, receipt_code, created_at, paid_at
+                    INSERT INTO citas (
+                        ticket, id_paciente, id_especialidad, estado, estado_pago, estado_triaje,
+                        estado_consulta, estado_farmacia, consultorio, fecha_programada, codigo_recibo, fecha_creacion, fecha_pago
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'C-101', ?, 'B-DEMO', ?, ?)
                     """,
                     [
                         (
                             ticket,
-                            patient_id,
-                            specialty_id,
-                            status,
-                            payment_status,
-                            triage_status,
-                            consultation_status,
-                            pharmacy_status,
+                            id_paciente,
+                            id_especialidad,
+                            estado,
+                            estado_pago,
+                            estado_triaje,
+                            estado_consulta,
+                            estado_farmacia,
                             local_now().isoformat(timespec="minutes"),
                             utc_now(),
-                            utc_now() if payment_status == "paid" else None,
+                            utc_now() if estado_pago == "paid" else None,
                         )
-                        for ticket, patient_id, specialty_id, status, payment_status, triage_status, consultation_status, pharmacy_status in demo_appointments
+                        for ticket, id_paciente, id_especialidad, estado, estado_pago, estado_triaje, estado_consulta, estado_farmacia in demo_citas
                     ],
                 )
             self._seed_demo_data(conn)
 
     def _seed_demo_data(self, conn: sqlite3.Connection) -> None:
-        specialties = {
+        especialidades = {
             row["id"]: dict(row)
-            for row in conn.execute("SELECT * FROM specialties").fetchall()
+            for row in conn.execute("SELECT * FROM especialidades").fetchall()
         }
 
         def ensure_patient(payload: Dict[str, Any]) -> int:
             existing = conn.execute(
-                "SELECT id FROM patients WHERE document = ?", (payload["document"],)
+                "SELECT id FROM pacientes WHERE documento = ?", (payload["documento"],)
             ).fetchone()
             if existing:
                 conn.execute(
                     """
-                    UPDATE patients
-                    SET first_name = COALESCE(NULLIF(first_name, ''), :first_name),
-                        last_name = COALESCE(NULLIF(last_name, ''), :last_name),
-                        age = COALESCE(age, :age),
-                        sex = COALESCE(NULLIF(sex, ''), :sex),
-                        birth_date = COALESCE(NULLIF(birth_date, ''), :birth_date),
-                        phone = COALESCE(NULLIF(phone, ''), :phone),
-                        active = 1
+                    UPDATE pacientes
+                    SET nombre = COALESCE(NULLIF(nombre, ''), :nombre),
+                        apellido = COALESCE(NULLIF(apellido, ''), :apellido),
+                        edad = COALESCE(edad, :edad),
+                        sexo = COALESCE(NULLIF(sexo, ''), :sexo),
+                        fecha_nacimiento = COALESCE(NULLIF(fecha_nacimiento, ''), :fecha_nacimiento),
+                        telefono = COALESCE(NULLIF(telefono, ''), :telefono),
+                        activo = 1
                     WHERE id = :id
                     """,
                     {**payload, "id": existing["id"]},
@@ -626,110 +628,110 @@ class SQLiteRepository(BaseRepository):
 
             cursor = conn.execute(
                 """
-                INSERT INTO patients (
-                    document, first_name, last_name, age, sex, birth_date, phone, active, created_at
+                INSERT INTO pacientes (
+                    documento, nombre, apellido, edad, sexo, fecha_nacimiento, telefono, activo, fecha_creacion
                 )
-                VALUES (:document, :first_name, :last_name, :age, :sex, :birth_date, :phone, 1, :created_at)
+                VALUES (:documento, :nombre, :apellido, :edad, :sexo, :fecha_nacimiento, :telefono, 1, :fecha_creacion)
                 """,
-                {**payload, "created_at": utc_now()},
+                {**payload, "fecha_creacion": utc_now()},
             )
             return int(cursor.lastrowid)
 
-        demo_patients = {
+        demo_pacientes = {
             "Rosa": ensure_patient(
                 {
-                    "document": "70987654",
-                    "first_name": "Rosa",
-                    "last_name": "Medina Torres",
-                    "age": 34,
-                    "sex": "Femenino",
-                    "birth_date": "1992-04-13",
-                    "phone": "997123456",
+                    "documento": "70987654",
+                    "nombre": "Rosa",
+                    "apellido": "Medina Torres",
+                    "edad": 34,
+                    "sexo": "Femenino",
+                    "fecha_nacimiento": "1992-04-13",
+                    "telefono": "997123456",
                 }
             ),
             "Miguel": ensure_patient(
                 {
-                    "document": "71345678",
-                    "first_name": "Miguel",
-                    "last_name": "Castro Leon",
-                    "age": 52,
-                    "sex": "Masculino",
-                    "birth_date": "1974-02-09",
-                    "phone": "996234567",
+                    "documento": "71345678",
+                    "nombre": "Miguel",
+                    "apellido": "Castro Leon",
+                    "edad": 52,
+                    "sexo": "Masculino",
+                    "fecha_nacimiento": "1974-02-09",
+                    "telefono": "996234567",
                 }
             ),
             "Carmen": ensure_patient(
                 {
-                    "document": "72456789",
-                    "first_name": "Carmen",
-                    "last_name": "Flores Rivas",
-                    "age": 71,
-                    "sex": "Femenino",
-                    "birth_date": "1955-11-21",
-                    "phone": "995345678",
+                    "documento": "72456789",
+                    "nombre": "Carmen",
+                    "apellido": "Flores Rivas",
+                    "edad": 71,
+                    "sexo": "Femenino",
+                    "fecha_nacimiento": "1955-11-21",
+                    "telefono": "995345678",
                 }
             ),
             "Diego": ensure_patient(
                 {
-                    "document": "73567890",
-                    "first_name": "Diego",
-                    "last_name": "Rojas Vega",
-                    "age": 39,
-                    "sex": "Masculino",
-                    "birth_date": "1987-07-02",
-                    "phone": "994456789",
+                    "documento": "73567890",
+                    "nombre": "Diego",
+                    "apellido": "Rojas Vega",
+                    "edad": 39,
+                    "sexo": "Masculino",
+                    "fecha_nacimiento": "1987-07-02",
+                    "telefono": "994456789",
                 }
             ),
             "Patricia": ensure_patient(
                 {
-                    "document": "74678901",
-                    "first_name": "Patricia",
-                    "last_name": "Nunez Soto",
-                    "age": 29,
-                    "sex": "Femenino",
-                    "birth_date": "1997-09-18",
-                    "phone": "993567890",
+                    "documento": "74678901",
+                    "nombre": "Patricia",
+                    "apellido": "Nunez Soto",
+                    "edad": 29,
+                    "sexo": "Femenino",
+                    "fecha_nacimiento": "1997-09-18",
+                    "telefono": "993567890",
                 }
             ),
         }
 
         def ensure_appointment(
             ticket: str,
-            patient_id: int,
-            specialty_id: int,
-            status: str,
-            payment_status: str,
-            triage_status: str,
-            consultation_status: str,
-            pharmacy_status: str,
+            id_paciente: int,
+            id_especialidad: int,
+            estado: str,
+            estado_pago: str,
+            estado_triaje: str,
+            estado_consulta: str,
+            estado_farmacia: str,
             minutes_ahead: int,
         ) -> int:
             existing = conn.execute(
-                "SELECT id FROM appointments WHERE ticket = ?", (ticket,)
+                "SELECT id FROM citas WHERE ticket = ?", (ticket,)
             ).fetchone()
             if existing:
                 return int(existing["id"])
 
-            specialty = specialties[specialty_id]
-            paid = payment_status == "paid"
+            specialty = especialidades[id_especialidad]
+            paid = estado_pago == "paid"
             cursor = conn.execute(
                 """
-                INSERT INTO appointments (
-                    ticket, patient_id, specialty_id, status, payment_status, triage_status,
-                    consultation_status, pharmacy_status, room, scheduled_at, receipt_code, created_at, paid_at
+                INSERT INTO citas (
+                    ticket, id_paciente, id_especialidad, estado, estado_pago, estado_triaje,
+                    estado_consulta, estado_farmacia, consultorio, fecha_programada, codigo_recibo, fecha_creacion, fecha_pago
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ticket,
-                    patient_id,
-                    specialty_id,
-                    status,
-                    payment_status,
-                    triage_status,
-                    consultation_status,
-                    pharmacy_status,
-                    specialty["room"] if paid else None,
+                    id_paciente,
+                    id_especialidad,
+                    estado,
+                    estado_pago,
+                    estado_triaje,
+                    estado_consulta,
+                    estado_farmacia,
+                    specialty["consultorio"] if paid else None,
                     (local_now() + timedelta(minutes=minutes_ahead)).isoformat(timespec="minutes")
                     if paid
                     else None,
@@ -740,61 +742,61 @@ class SQLiteRepository(BaseRepository):
             )
             return int(cursor.lastrowid)
 
-        appointments = {
+        citas = {
             "A0101": ensure_appointment(
-                "A0101", demo_patients["Rosa"], 1, "registered", "pending",
+                "A0101", demo_pacientes["Rosa"], 1, "registered", "pending",
                 "not_started", "not_started", "none", 0
             ),
             "A0102": ensure_appointment(
-                "A0102", demo_patients["Miguel"], 3, "paid", "paid",
+                "A0102", demo_pacientes["Miguel"], 3, "paid", "paid",
                 "waiting", "not_started", "none", 20
             ),
             "A0103": ensure_appointment(
-                "A0103", demo_patients["Carmen"], 1, "triaged", "paid",
+                "A0103", demo_pacientes["Carmen"], 1, "triedadd", "paid",
                 "done", "waiting", "none", 35
             ),
             "A0104": ensure_appointment(
-                "A0104", demo_patients["Diego"], 4, "prescription_pending", "paid",
+                "A0104", demo_pacientes["Diego"], 4, "prescription_pending", "paid",
                 "done", "done", "pending", 50
             ),
             "A0105": ensure_appointment(
-                "A0105", demo_patients["Patricia"], 2, "completed", "paid",
+                "A0105", demo_pacientes["Patricia"], 2, "completed", "paid",
                 "done", "done", "dispensed", 65
             ),
         }
 
-        def ensure_triage(appointment_id: int, vitals: Dict[str, Any], analysis: Dict[str, Any]) -> None:
+        def ensure_triedad(id_cita: int, vitals: Dict[str, Any], analysis: Dict[str, Any]) -> None:
             existing = conn.execute(
-                "SELECT id FROM triage_records WHERE appointment_id = ?", (appointment_id,)
+                "SELECT id FROM expedientes WHERE id_cita = ?", (id_cita,)
             ).fetchone()
             if existing:
                 return
             conn.execute(
                 """
-                INSERT INTO triage_records (
-                    appointment_id, temperature, heart_rate, spo2, systolic, diastolic,
-                    weight, height, bmi, priority, risk_score, risk_label,
-                    predicted_systolic, estimated_attention_minutes, decision_summary,
-                    analysis_json, source, captured_at
+                INSERT INTO expedientes (
+                    id_cita, temperatura, ritmo_cardiaco, spo2, sistolica, diastolica,
+                    peso, altura, imc, prioridad, puntuacion_riesgo, etiqueta_riesgo,
+                    sistolica_predicha, minutos_estimados, resumen_decision,
+                    analisis_json, fuente, fecha_captura
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Demo IoT', ?)
                 """,
                 (
-                    appointment_id,
-                    vitals["temperature"],
-                    vitals["heart_rate"],
+                    id_cita,
+                    vitals["temperatura"],
+                    vitals["ritmo_cardiaco"],
                     vitals["spo2"],
-                    vitals["systolic"],
-                    vitals["diastolic"],
-                    vitals["weight"],
-                    vitals["height"],
-                    analysis["bmi"],
-                    analysis["priority"],
+                    vitals["sistolica"],
+                    vitals["diastolica"],
+                    vitals["peso"],
+                    vitals["altura"],
+                    analysis["imc"],
+                    analysis["prioridad"],
                     analysis["risk_probability"],
-                    analysis["risk_label"],
-                    analysis["predicted_systolic"],
-                    analysis["estimated_attention_minutes"],
-                    analysis["decision_summary"],
+                    analysis["etiqueta_riesgo"],
+                    analysis["sistolica_predicha"],
+                    analysis["minutos_estimados"],
+                    analysis["resumen_decision"],
                     json.dumps(analysis),
                     utc_now(),
                 ),
@@ -806,108 +808,108 @@ class SQLiteRepository(BaseRepository):
             "logistic_regression": "Probabilidad de riesgo clinico.",
             "decision_tree": "Prioridad operativa para la cola medica.",
         }
-        ensure_triage(
-            appointments["A0103"],
+        ensure_triedad(
+            citas["A0103"],
             {
-                "temperature": 38.4,
-                "heart_rate": 112,
+                "temperatura": 38.4,
+                "ritmo_cardiaco": 112,
                 "spo2": 94,
-                "systolic": 146,
-                "diastolic": 88,
-                "weight": 73.0,
-                "height": 154.0,
+                "sistolica": 146,
+                "diastolica": 88,
+                "peso": 73.0,
+                "altura": 154.0,
             },
             {
-                "bmi": 30.78,
+                "imc": 30.78,
                 "risk_probability": 0.68,
-                "risk_label": "Moderado",
-                "priority": "Urgente",
-                "predicted_systolic": 139.4,
-                "estimated_attention_minutes": 24.0,
+                "etiqueta_riesgo": "Moderado",
+                "prioridad": "Urgente",
+                "sistolica_predicha": 139.4,
+                "minutos_estimados": 24.0,
                 "flags": ["Fiebre", "Frecuencia cardiaca alta", "Saturacion baja"],
-                "decision_summary": "Urgente por fiebre, frecuencia cardiaca alta y saturacion baja. Riesgo moderado.",
+                "resumen_decision": "Urgente por fiebre, frecuencia cardiaca alta y saturacion baja. Riesgo moderado.",
                 "algorithms": base_algorithms,
             },
         )
-        ensure_triage(
-            appointments["A0104"],
+        ensure_triedad(
+            citas["A0104"],
             {
-                "temperature": 37.1,
-                "heart_rate": 86,
+                "temperatura": 37.1,
+                "ritmo_cardiaco": 86,
                 "spo2": 97,
-                "systolic": 126,
-                "diastolic": 79,
-                "weight": 84.0,
-                "height": 172.0,
+                "sistolica": 126,
+                "diastolica": 79,
+                "peso": 84.0,
+                "altura": 172.0,
             },
             {
-                "bmi": 28.39,
+                "imc": 28.39,
                 "risk_probability": 0.24,
-                "risk_label": "Bajo",
-                "priority": "Rutina",
-                "predicted_systolic": 127.1,
-                "estimated_attention_minutes": 15.5,
+                "etiqueta_riesgo": "Bajo",
+                "prioridad": "Rutina",
+                "sistolica_predicha": 127.1,
+                "minutos_estimados": 15.5,
                 "flags": [],
-                "decision_summary": "Rutina. Signos dentro de rango operativo. Riesgo bajo.",
+                "resumen_decision": "Rutina. Signos dentro de rango operativo. Riesgo bajo.",
                 "algorithms": base_algorithms,
             },
         )
-        ensure_triage(
-            appointments["A0105"],
+        ensure_triedad(
+            citas["A0105"],
             {
-                "temperature": 36.8,
-                "heart_rate": 92,
+                "temperatura": 36.8,
+                "ritmo_cardiaco": 92,
                 "spo2": 98,
-                "systolic": 120,
-                "diastolic": 76,
-                "weight": 62.0,
-                "height": 161.0,
+                "sistolica": 120,
+                "diastolica": 76,
+                "peso": 62.0,
+                "altura": 161.0,
             },
             {
-                "bmi": 23.92,
+                "imc": 23.92,
                 "risk_probability": 0.18,
-                "risk_label": "Bajo",
-                "priority": "Rutina",
-                "predicted_systolic": 129.6,
-                "estimated_attention_minutes": 14.0,
+                "etiqueta_riesgo": "Bajo",
+                "prioridad": "Rutina",
+                "sistolica_predicha": 129.6,
+                "minutos_estimados": 14.0,
                 "flags": [],
-                "decision_summary": "Rutina. Signos dentro de rango operativo. Riesgo bajo.",
+                "resumen_decision": "Rutina. Signos dentro de rango operativo. Riesgo bajo.",
                 "algorithms": base_algorithms,
             },
         )
 
         def ensure_consultation(
-            appointment_id: int,
-            doctor_name: str,
-            symptoms: str,
-            diagnosis: str,
-            treatment_notes: str,
+            id_cita: int,
+            nombre_medico: str,
+            sintomas: str,
+            diagnostico: str,
+            tratamiento_notas: str,
         ) -> int:
             existing = conn.execute(
-                "SELECT id FROM consultations WHERE appointment_id = ?", (appointment_id,)
+                "SELECT id FROM consultas WHERE id_cita = ?", (id_cita,)
             ).fetchone()
             if existing:
                 return int(existing["id"])
             cursor = conn.execute(
                 """
-                INSERT INTO consultations (
-                    appointment_id, doctor_name, symptoms, diagnosis, treatment_notes, notes, created_at
+                INSERT INTO consultas (
+                    id_cita, nombre_medico, sintomas, diagnostico, tratamiento_notas, notas, fecha_creacion
                 )
                 VALUES (?, ?, ?, ?, ?, '', ?)
                 """,
-                (appointment_id, doctor_name, symptoms, diagnosis, treatment_notes, utc_now()),
+                (id_cita, nombre_medico, sintomas, diagnostico, tratamiento_notas, utc_now()),
             )
             return int(cursor.lastrowid)
 
         consultation_a0104 = ensure_consultation(
-            appointments["A0104"],
+            citas["A0104"],
             "Dr. Alonso Vega",
             "Lesiones pruriginosas en antebrazo desde hace 3 dias.",
             "Dermatitis alergica leve",
             "Evitar irritantes, antihistaminico y control si progresa.",
         )
         consultation_a0105 = ensure_consultation(
-            appointments["A0105"],
+            citas["A0105"],
             "Dr. Mateo Aguilar",
             "Dolor de garganta y fiebre referida.",
             "Faringitis aguda",
@@ -915,103 +917,103 @@ class SQLiteRepository(BaseRepository):
         )
 
         def ensure_prescription(
-            appointment_id: int,
-            consultation_id: int,
-            status: str,
+            id_cita: int,
+            id_consulta: int,
+            estado: str,
             dispensed: bool,
             items: Sequence[Dict[str, Any]],
         ) -> int:
             existing = conn.execute(
-                "SELECT id FROM prescriptions WHERE appointment_id = ?", (appointment_id,)
+                "SELECT id FROM recetas WHERE id_cita = ?", (id_cita,)
             ).fetchone()
             if existing:
                 return int(existing["id"])
-            total = sum(float(item["unit_price"]) * int(item["quantity"]) for item in items)
+            total = sum(float(item["unit_precio"]) * int(item["cantidad"]) for item in items)
             cursor = conn.execute(
                 """
-                INSERT INTO prescriptions (
-                    appointment_id, consultation_id, status, total, created_at, dispensed_at
+                INSERT INTO recetas (
+                    id_cita, id_consulta, estado, total, fecha_creacion, fecha_dispensacion
                 )
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    appointment_id,
-                    consultation_id,
-                    status,
+                    id_cita,
+                    id_consulta,
+                    estado,
                     total,
                     utc_now(),
                     utc_now() if dispensed else None,
                 ),
             )
-            prescription_id = int(cursor.lastrowid)
+            id_receta = int(cursor.lastrowid)
             conn.executemany(
                 """
-                INSERT INTO prescription_items (
-                    prescription_id, medicine, dosage, frequency, days, quantity, unit_price
+                INSERT INTO receta_items (
+                    id_receta, medicamento, dosis, frecuencia, dias, cantidad, unit_precio
                 )
-                VALUES (:prescription_id, :medicine, :dosage, :frequency, :days, :quantity, :unit_price)
+                VALUES (:id_receta, :medicamento, :dosis, :frecuencia, :dias, :cantidad, :unit_precio)
                 """,
-                [dict(item, prescription_id=prescription_id) for item in items],
+                [dict(item, id_receta=id_receta) for item in items],
             )
-            return prescription_id
+            return id_receta
 
         prescription_a0104 = ensure_prescription(
-            appointments["A0104"],
+            citas["A0104"],
             consultation_a0104,
             "pending",
             False,
             [
                 {
-                    "medicine": "Loratadina 10 mg",
-                    "dosage": "1 tableta",
-                    "frequency": "Cada 24 horas",
-                    "days": 5,
-                    "quantity": 5,
-                    "unit_price": 1.80,
+                    "medicamento": "Loratadina 10 mg",
+                    "dosis": "1 tableta",
+                    "frecuencia": "Cada 24 horas",
+                    "dias": 5,
+                    "cantidad": 5,
+                    "unit_precio": 1.80,
                 },
                 {
-                    "medicine": "Paracetamol 500 mg",
-                    "dosage": "1 tableta",
-                    "frequency": "Si hay dolor",
-                    "days": 3,
-                    "quantity": 6,
-                    "unit_price": 1.50,
+                    "medicamento": "Paracetamol 500 mg",
+                    "dosis": "1 tableta",
+                    "frecuencia": "Si hay dolor",
+                    "dias": 3,
+                    "cantidad": 6,
+                    "unit_precio": 1.50,
                 },
             ],
         )
         prescription_a0105 = ensure_prescription(
-            appointments["A0105"],
+            citas["A0105"],
             consultation_a0105,
             "dispensed",
             True,
             [
                 {
-                    "medicine": "Paracetamol 500 mg",
-                    "dosage": "1 tableta",
-                    "frequency": "Cada 8 horas",
-                    "days": 3,
-                    "quantity": 9,
-                    "unit_price": 1.50,
+                    "medicamento": "Paracetamol 500 mg",
+                    "dosis": "1 tableta",
+                    "frecuencia": "Cada 8 horas",
+                    "dias": 3,
+                    "cantidad": 9,
+                    "unit_precio": 1.50,
                 },
                 {
-                    "medicine": "Suero oral",
-                    "dosage": "1 sobre",
-                    "frequency": "Segun tolerancia",
-                    "days": 2,
-                    "quantity": 2,
-                    "unit_price": 4.50,
+                    "medicamento": "Suero oral",
+                    "dosis": "1 sobre",
+                    "frecuencia": "Segun tolerancia",
+                    "dias": 2,
+                    "cantidad": 2,
+                    "unit_precio": 4.50,
                 },
             ],
         )
 
-        self._backfill_transactions(conn)
+        self._backfill_transacciones(conn)
         prescription = conn.execute(
             """
-            SELECT pr.*, a.ticket, p.document AS patient_document,
-                   p.first_name || ' ' || p.last_name AS patient_name
-            FROM prescriptions pr
-            JOIN appointments a ON a.id = pr.appointment_id
-            JOIN patients p ON p.id = a.patient_id
+            SELECT pr.*, a.ticket, p.documento AS documento_paciente,
+                   p.nombre || ' ' || p.apellido AS nombre_paciente
+            FROM recetas pr
+            JOIN citas a ON a.id = pr.id_cita
+            JOIN pacientes p ON p.id = a.id_paciente
             WHERE pr.id = ?
             """,
             (prescription_a0105,),
@@ -1019,514 +1021,535 @@ class SQLiteRepository(BaseRepository):
         if prescription:
             self._record_transaction(
                 conn,
-                module="pharmacy",
-                reference_type="prescription",
-                reference_id=prescription_a0105,
-                patient_document=prescription["patient_document"],
-                patient_name=prescription["patient_name"],
-                concept=f"Medicamentos - {prescription['ticket']}",
-                amount=float(prescription["total"] or 0),
-                payment_method="Yape",
-                created_by="farmacia",
+                modulo="pharmacy",
+                tipo_referencia="prescription",
+                id_referencia=prescription_a0105,
+                documento_paciente=prescription["documento_paciente"],
+                nombre_paciente=prescription["nombre_paciente"],
+                concepto=f"Medicamentos - {prescription['ticket']}",
+                monto=float(prescription["total"] or 0),
+                metodo_pago="Yape",
+                creado_por="farmacia",
             )
 
-    def _backfill_transactions(self, conn: sqlite3.Connection) -> None:
-        paid_appointments = conn.execute(
+    def _backfill_transacciones(self, conn: sqlite3.Connection) -> None:
+        paid_citas = conn.execute(
             """
-            SELECT a.id, p.document AS patient_document,
-                   p.first_name || ' ' || p.last_name AS patient_name,
-                   s.name AS specialty_name, s.price AS specialty_price
-            FROM appointments a
-            JOIN patients p ON p.id = a.patient_id
-            JOIN specialties s ON s.id = a.specialty_id
-            WHERE a.payment_status = 'paid'
+            SELECT a.id, p.documento AS documento_paciente,
+                   p.nombre || ' ' || p.apellido AS nombre_paciente,
+                   s.nombre AS especialidad_nombre, s.precio AS specialty_precio
+            FROM citas a
+            JOIN pacientes p ON p.id = a.id_paciente
+            JOIN especialidades s ON s.id = a.id_especialidad
+            WHERE a.estado_pago = 'paid'
             """
         ).fetchall()
-        for row in paid_appointments:
+        for row in paid_citas:
             self._record_transaction(
                 conn,
-                module="cashier",
-                reference_type="appointment",
-                reference_id=int(row["id"]),
-                patient_document=row["patient_document"],
-                patient_name=row["patient_name"],
-                concept=f"Consulta - {row['specialty_name']}",
-                amount=float(row["specialty_price"] or 0),
-                payment_method="Efectivo",
-                created_by="seed",
+                modulo="cashier",
+                tipo_referencia="appointment",
+                id_referencia=int(row["id"]),
+                documento_paciente=row["documento_paciente"],
+                nombre_paciente=row["nombre_paciente"],
+                concepto=f"Consulta - {row['especialidad_nombre']}",
+                monto=float(row["specialty_precio"] or 0),
+                metodo_pago="Efectivo",
+                creado_por="seed",
             )
 
-        dispensed_prescriptions = conn.execute(
+        dispensed_recetas = conn.execute(
             """
-            SELECT pr.id, pr.total, a.ticket, p.document AS patient_document,
-                   p.first_name || ' ' || p.last_name AS patient_name
-            FROM prescriptions pr
-            JOIN appointments a ON a.id = pr.appointment_id
-            JOIN patients p ON p.id = a.patient_id
-            WHERE pr.status = 'dispensed'
+            SELECT pr.id, pr.total, a.ticket, p.documento AS documento_paciente,
+                   p.nombre || ' ' || p.apellido AS nombre_paciente
+            FROM recetas pr
+            JOIN citas a ON a.id = pr.id_cita
+            JOIN pacientes p ON p.id = a.id_paciente
+            WHERE pr.estado = 'dispensed'
             """
         ).fetchall()
-        for row in dispensed_prescriptions:
+        for row in dispensed_recetas:
             self._record_transaction(
                 conn,
-                module="pharmacy",
-                reference_type="prescription",
-                reference_id=int(row["id"]),
-                patient_document=row["patient_document"],
-                patient_name=row["patient_name"],
-                concept=f"Medicamentos - {row['ticket']}",
-                amount=float(row["total"] or 0),
-                payment_method="Efectivo",
-                created_by="seed",
+                modulo="pharmacy",
+                tipo_referencia="prescription",
+                id_referencia=int(row["id"]),
+                documento_paciente=row["documento_paciente"],
+                nombre_paciente=row["nombre_paciente"],
+                concepto=f"Medicamentos - {row['ticket']}",
+                monto=float(row["total"] or 0),
+                metodo_pago="Efectivo",
+                creado_por="seed",
             )
     def snapshot(self) -> Dict[str, Any]:
+        with self._connect() as conn:
+            paciente_rows = conn.execute("SELECT * FROM pacientes ORDER BY id").fetchall()
+            especialidad_rows = conn.execute("SELECT * FROM especialidades ORDER BY id").fetchall()
+            cita_rows = conn.execute("SELECT * FROM citas ORDER BY id").fetchall()
+            expediente_rows = conn.execute("SELECT * FROM expedientes ORDER BY id").fetchall()
+            consulta_rows = conn.execute("SELECT * FROM consultas ORDER BY id").fetchall()
+            receta_rows = conn.execute("SELECT * FROM recetas ORDER BY id").fetchall()
+            receta_item_rows = conn.execute("SELECT * FROM receta_items ORDER BY id").fetchall()
+            transaccion_rows = conn.execute("SELECT * FROM transacciones ORDER BY id").fetchall()
+            usuario_rows = conn.execute("SELECT * FROM usuarios ORDER BY id").fetchall()
+            trabajador_rows = conn.execute("SELECT * FROM trabajadores ORDER BY id").fetchall()
+            medicamento_rows = conn.execute("SELECT * FROM medicamentos ORDER BY id").fetchall()
+            consultorio_rows = conn.execute("SELECT * FROM consultorios ORDER BY id").fetchall()
         return {
-            "specialties": self.list_specialties(),
-            "appointments": self.list_appointments(),
-            "prescriptions": self.list_prescriptions(),
-            "transactions": self.list_transactions(),
+            "pacientes": [dict(row) for row in paciente_rows],
+            "especialidades": [dict(row) for row in especialidad_rows],
+            "citas": [dict(row) for row in cita_rows],
+            "expedientes": [dict(row) for row in expediente_rows],
+            "consultas": [dict(row) for row in consulta_rows],
+            "recetas": [dict(row) for row in receta_rows],
+            "receta_items": [dict(row) for row in receta_item_rows],
+            "transacciones": [dict(row) for row in transaccion_rows],
+            "usuarios": [dict(row) for row in usuario_rows],
+            "trabajadores": [dict(row) for row in trabajador_rows],
+            "medicamentos": [dict(row) for row in medicamento_rows],
+            "consultorios": [dict(row) for row in consultorio_rows],
             "stats": self.stats(),
-            "active_triage_appointment_id": self.get_setting("active_triage_appointment_id"),
-            "called_triage_appointment_id": self.get_setting("called_triage_appointment_id"),
-            "called_doctor_appointment_id": self.get_setting("called_doctor_appointment_id"),
+            "activo_triedad_id_cita": self.get_setting("activo_triedad_id_cita"),
+            "called_triedad_id_cita": self.get_setting("called_triedad_id_cita"),
+            "called_doctor_id_cita": self.get_setting("called_doctor_id_cita"),
         }
 
-    def list_specialties(self) -> List[Dict[str, Any]]:
+    def list_especialidades(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT * FROM specialties ORDER BY id").fetchall()
+            rows = conn.execute("SELECT * FROM especialidades ORDER BY id").fetchall()
         return [dict(row) for row in rows]
 
-    def list_appointments(self) -> List[Dict[str, Any]]:
+    def list_citas(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
                 """
                 SELECT
                     a.*,
-                    p.document AS patient_document,
-                    p.first_name AS patient_first_name,
-                    p.last_name AS patient_last_name,
-                    p.age AS patient_age,
-                    p.sex AS patient_sex,
-                    p.birth_date AS patient_birth_date,
-                    p.phone AS patient_phone,
-                    s.name AS specialty_name,
-                    s.price AS specialty_price,
-                    s.duration_min AS specialty_duration_min,
-                    s.doctor_name AS specialty_doctor_name
-                FROM appointments a
-                JOIN patients p ON p.id = a.patient_id
-                JOIN specialties s ON s.id = a.specialty_id
+                    p.documento AS documento_paciente,
+                    p.nombre AS patient_nombre,
+                    p.apellido AS patient_apellido,
+                    p.edad AS patient_edad,
+                    p.sexo AS patient_sexo,
+                    p.fecha_nacimiento AS patient_fecha_nacimiento,
+                    p.telefono AS patient_telefono,
+                    s.nombre AS especialidad_nombre,
+                    s.precio AS specialty_precio,
+                    s.duracion_minutos AS specialty_duracion_min,
+                    s.nombre_medico AS especialidad_nombre_medico
+                FROM citas a
+                JOIN pacientes p ON p.id = a.id_paciente
+                JOIN especialidades s ON s.id = a.id_especialidad
                 ORDER BY a.id DESC
                 """
             ).fetchall()
-            triage_rows = conn.execute("SELECT * FROM triage_records").fetchall()
-            consultation_rows = conn.execute("SELECT * FROM consultations").fetchall()
-        triage_by_appointment = {row["appointment_id"]: self._triage_dict(row) for row in triage_rows}
+            triedad_rows = conn.execute("SELECT * FROM expedientes").fetchall()
+            consultation_rows = conn.execute("SELECT * FROM consultas").fetchall()
+        triedad_by_appointment = {row["id_cita"]: self._triedad_dict(row) for row in triedad_rows}
         consultation_by_appointment = {
-            row["appointment_id"]: dict(row) for row in consultation_rows
+            row["id_cita"]: dict(row) for row in consultation_rows
         }
         return [
             self._appointment_dict(
                 row,
-                triage_by_appointment.get(row["id"]),
+                triedad_by_appointment.get(row["id"]),
                 consultation_by_appointment.get(row["id"]),
             )
             for row in rows
         ]
 
-    def get_appointment(self, appointment_id: int) -> Optional[Dict[str, Any]]:
+    def get_appointment(self, id_cita: int) -> Optional[Dict[str, Any]]:
         return next(
-            (item for item in self.list_appointments() if int(item["id"]) == int(appointment_id)),
+            (item for item in self.list_citas() if int(item["id"]) == int(id_cita)),
             None,
         )
 
     def create_patient_and_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         patient_data = _validate_patient_payload(payload)
-        specialty_id = int(payload.get("specialty_id") or 0)
+        id_especialidad = int(payload.get("id_especialidad") or 0)
 
-        if specialty_id <= 0:
+        if id_especialidad <= 0:
             raise ValueError("Faltan datos obligatorios del paciente o especialidad.")
 
         with self._connect() as conn:
             patient = conn.execute(
-                "SELECT id FROM patients WHERE document = ?", (patient_data["document"],)
+                "SELECT id FROM pacientes WHERE documento = ?", (patient_data["documento"],)
             ).fetchone()
             if patient:
-                patient_id = int(patient["id"])
+                id_paciente = int(patient["id"])
                 conn.execute(
                     """
-                    UPDATE patients
-                    SET first_name = ?, last_name = ?, age = ?, sex = ?, birth_date = ?, phone = ?
+                    UPDATE pacientes
+                    SET nombre = ?, apellido = ?, edad = ?, sexo = ?, fecha_nacimiento = ?, telefono = ?
                     WHERE id = ?
                     """,
                     (
-                        patient_data["first_name"],
-                        patient_data["last_name"],
-                        patient_data["age"],
-                        patient_data["sex"],
-                        patient_data["birth_date"],
-                        patient_data["phone"],
-                        patient_id,
+                        patient_data["nombre"],
+                        patient_data["apellido"],
+                        patient_data["edad"],
+                        patient_data["sexo"],
+                        patient_data["fecha_nacimiento"],
+                        patient_data["telefono"],
+                        id_paciente,
                     ),
                 )
             else:
                 cursor = conn.execute(
                     """
-                    INSERT INTO patients (
-                        document, first_name, last_name, age, sex, birth_date, phone, active, created_at
+                    INSERT INTO pacientes (
+                        documento, nombre, apellido, edad, sexo, fecha_nacimiento, telefono, activo, fecha_creacion
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
                     """,
                     (
-                        patient_data["document"],
-                        patient_data["first_name"],
-                        patient_data["last_name"],
-                        patient_data["age"],
-                        patient_data["sex"],
-                        patient_data["birth_date"],
-                        patient_data["phone"],
+                        patient_data["documento"],
+                        patient_data["nombre"],
+                        patient_data["apellido"],
+                        patient_data["edad"],
+                        patient_data["sexo"],
+                        patient_data["fecha_nacimiento"],
+                        patient_data["telefono"],
                         utc_now(),
                     ),
                 )
-                patient_id = int(cursor.lastrowid)
+                id_paciente = int(cursor.lastrowid)
 
             ticket = self._next_ticket(conn)
             cursor = conn.execute(
                 """
-                INSERT INTO appointments (
-                    ticket, patient_id, specialty_id, status, payment_status, triage_status,
-                    consultation_status, pharmacy_status, created_at
+                INSERT INTO citas (
+                    ticket, id_paciente, id_especialidad, estado, estado_pago, estado_triaje,
+                    estado_consulta, estado_farmacia, fecha_creacion
                 )
                 VALUES (?, ?, ?, 'registered', 'pending', 'not_started', 'not_started', 'none', ?)
                 """,
-                (ticket, patient_id, specialty_id, utc_now()),
+                (ticket, id_paciente, id_especialidad, utc_now()),
             )
-            appointment_id = int(cursor.lastrowid)
-            self._audit(conn, "appointment_created", "appointments", appointment_id, f"Cita {ticket} registrada")
-        appointment = self.get_appointment(appointment_id)
+            id_cita = int(cursor.lastrowid)
+            self._audit(conn, "appointment_created", "citas", id_cita, f"Cita {ticket} registrada")
+        appointment = self.get_appointment(id_cita)
         if appointment is None:
             raise RuntimeError("No se pudo recuperar la cita creada.")
         return appointment
 
     def mark_paid(
         self,
-        appointment_id: int,
-        payment_method: str = "Efectivo",
-        created_by: Optional[str] = None,
+        id_cita: int,
+        metodo_pago: str = "Efectivo",
+        creado_por: Optional[str] = None,
     ) -> Dict[str, Any]:
         with self._connect() as conn:
             row = conn.execute(
                 """
                 SELECT
                     a.*,
-                    p.document AS patient_document,
-                    p.first_name || ' ' || p.last_name AS patient_name,
-                    s.name AS specialty_name,
-                    s.price AS specialty_price,
-                    s.room,
-                    s.duration_min
-                FROM appointments a
-                JOIN patients p ON p.id = a.patient_id
-                JOIN specialties s ON s.id = a.specialty_id
+                    p.documento AS documento_paciente,
+                    p.nombre || ' ' || p.apellido AS nombre_paciente,
+                    s.nombre AS especialidad_nombre,
+                    s.precio AS specialty_precio,
+                    s.consultorio,
+                    s.duracion_minutos
+                FROM citas a
+                JOIN pacientes p ON p.id = a.id_paciente
+                JOIN especialidades s ON s.id = a.id_especialidad
                 WHERE a.id = ?
                 """,
-                (appointment_id,),
+                (id_cita,),
             ).fetchone()
             if row is None:
                 raise ValueError("Cita no encontrada.")
-            if row["payment_status"] == "paid":
+            if row["estado_pago"] == "paid":
                 self._record_transaction(
                     conn,
-                    module="cashier",
-                    reference_type="appointment",
-                    reference_id=appointment_id,
-                    patient_document=row["patient_document"],
-                    patient_name=row["patient_name"],
-                    concept=f"Consulta - {row['specialty_name']}",
-                    amount=float(row["specialty_price"] or 0),
-                    payment_method=payment_method,
-                    created_by=created_by,
+                    modulo="cashier",
+                    tipo_referencia="appointment",
+                    id_referencia=id_cita,
+                    documento_paciente=row["documento_paciente"],
+                    nombre_paciente=row["nombre_paciente"],
+                    concepto=f"Consulta - {row['especialidad_nombre']}",
+                    monto=float(row["specialty_precio"] or 0),
+                    metodo_pago=metodo_pago,
+                    creado_por=creado_por,
                 )
             else:
                 paid_count = conn.execute(
                     """
-                    SELECT COUNT(*) FROM appointments
-                    WHERE specialty_id = ? AND payment_status = 'paid'
+                    SELECT COUNT(*) FROM citas
+                    WHERE id_especialidad = ? AND estado_pago = 'paid'
                     """,
-                    (row["specialty_id"],),
+                    (row["id_especialidad"],),
                 ).fetchone()[0]
-                scheduled_at = local_now() + timedelta(minutes=(paid_count + 1) * int(row["duration_min"]))
-                receipt_code = f"B{datetime.now().strftime('%Y%m%d%H%M')}-{appointment_id:04d}"
+                fecha_programada = local_now() + timedelta(minutes=(paid_count + 1) * int(row["duracion_min"]))
+                codigo_recibo = f"B{datetime.now().strftime('%Y%m%d%H%M')}-{id_cita:04d}"
                 conn.execute(
                     """
-                    UPDATE appointments
-                    SET status = 'paid',
-                        payment_status = 'paid',
-                        triage_status = 'waiting',
-                        consultation_status = 'not_started',
-                        pharmacy_status = 'none',
-                        room = ?,
-                        scheduled_at = ?,
-                        receipt_code = ?,
-                        paid_at = ?
+                    UPDATE citas
+                    SET estado = 'paid',
+                        estado_pago = 'paid',
+                        estado_triaje = 'waiting',
+                        estado_consulta = 'not_started',
+                        estado_farmacia = 'none',
+                        consultorio = ?,
+                        fecha_programada = ?,
+                        codigo_recibo = ?,
+                        fecha_pago = ?
                     WHERE id = ?
                     """,
                     (
-                        row["room"],
-                        scheduled_at.isoformat(timespec="minutes"),
-                        receipt_code,
+                        row["consultorio"],
+                        fecha_programada.isoformat(timespec="minutes"),
+                        codigo_recibo,
                         utc_now(),
-                        appointment_id,
+                        id_cita,
                     ),
                 )
-                self._audit(conn, "payment_registered", "appointments", appointment_id, f"Pago {receipt_code} confirmado")
+                self._audit(conn, "payment_registered", "citas", id_cita, f"Pago {codigo_recibo} confirmado")
                 self._record_transaction(
                     conn,
-                    module="cashier",
-                    reference_type="appointment",
-                    reference_id=appointment_id,
-                    patient_document=row["patient_document"],
-                    patient_name=row["patient_name"],
-                    concept=f"Consulta - {row['specialty_name']}",
-                    amount=float(row["specialty_price"] or 0),
-                    payment_method=payment_method,
-                    created_by=created_by,
+                    modulo="cashier",
+                    tipo_referencia="appointment",
+                    id_referencia=id_cita,
+                    documento_paciente=row["documento_paciente"],
+                    nombre_paciente=row["nombre_paciente"],
+                    concepto=f"Consulta - {row['especialidad_nombre']}",
+                    monto=float(row["specialty_precio"] or 0),
+                    metodo_pago=metodo_pago,
+                    creado_por=creado_por,
                 )
-        appointment = self.get_appointment(appointment_id)
+        appointment = self.get_appointment(id_cita)
         if appointment is None:
             raise RuntimeError("No se pudo recuperar la cita pagada.")
         return appointment
 
-    def set_active_triage(self, appointment_id: int) -> Dict[str, Any]:
+    def set_activo_triedad(self, id_cita: int) -> Dict[str, Any]:
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT * FROM appointments WHERE id = ?", (appointment_id,)
+                "SELECT * FROM citas WHERE id = ?", (id_cita,)
             ).fetchone()
             if row is None:
                 raise ValueError("Cita no encontrada.")
-            if row["payment_status"] != "paid":
+            if row["estado_pago"] != "paid":
                 raise ValueError("La cita debe estar pagada antes de triaje.")
-            if row["triage_status"] == "done":
+            if row["estado_triaje"] == "done":
                 raise ValueError("El triaje ya fue registrado.")
 
             conn.execute(
                 """
-                UPDATE appointments
-                SET status = 'in_triage', triage_status = 'in_progress'
+                UPDATE citas
+                SET estado = 'in_triedad', estado_triaje = 'in_progress'
                 WHERE id = ?
                 """,
-                (appointment_id,),
+                (id_cita,),
             )
-            self._set_setting(conn, "active_triage_appointment_id", str(appointment_id))
-            self._audit(conn, "triage_started", "appointments", appointment_id, "Paciente activado para captura IoT")
-        appointment = self.get_appointment(appointment_id)
+            self._set_setting(conn, "activo_triedad_id_cita", str(id_cita))
+            self._audit(conn, "triedad_started", "citas", id_cita, "Paciente activado para captura IoT")
+        appointment = self.get_appointment(id_cita)
         if appointment is None:
             raise RuntimeError("No se pudo recuperar la cita activa.")
         return appointment
 
-    def capture_triage(
+    def capture_triedad(
         self,
-        appointment_id: int,
+        id_cita: int,
         vitals: Dict[str, Any],
         analysis: Dict[str, Any],
-        source: str,
+        fuente: str,
     ) -> Dict[str, Any]:
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT * FROM appointments WHERE id = ?", (appointment_id,)
+                "SELECT * FROM citas WHERE id = ?", (id_cita,)
             ).fetchone()
             if row is None:
                 raise ValueError("Cita no encontrada.")
-            captured_at = utc_now()
+            fecha_captura = utc_now()
             conn.execute(
                 """
-                INSERT INTO triage_records (
-                    appointment_id, temperature, heart_rate, spo2, systolic, diastolic,
-                    weight, height, bmi, priority, risk_score, risk_label,
-                    predicted_systolic, estimated_attention_minutes, decision_summary,
-                    analysis_json, source, captured_at
+                INSERT INTO expedientes (
+                    id_cita, temperatura, ritmo_cardiaco, spo2, sistolica, diastolica,
+                    peso, altura, imc, prioridad, puntuacion_riesgo, etiqueta_riesgo,
+                    sistolica_predicha, minutos_estimados, resumen_decision,
+                    analisis_json, fuente, fecha_captura
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(appointment_id) DO UPDATE SET
-                    temperature = excluded.temperature,
-                    heart_rate = excluded.heart_rate,
+                ON CONFLICT(id_cita) DO UPDATE SET
+                    temperatura = excluded.temperatura,
+                    ritmo_cardiaco = excluded.ritmo_cardiaco,
                     spo2 = excluded.spo2,
-                    systolic = excluded.systolic,
-                    diastolic = excluded.diastolic,
-                    weight = excluded.weight,
-                    height = excluded.height,
-                    bmi = excluded.bmi,
-                    priority = excluded.priority,
-                    risk_score = excluded.risk_score,
-                    risk_label = excluded.risk_label,
-                    predicted_systolic = excluded.predicted_systolic,
-                    estimated_attention_minutes = excluded.estimated_attention_minutes,
-                    decision_summary = excluded.decision_summary,
-                    analysis_json = excluded.analysis_json,
-                    source = excluded.source,
-                    captured_at = excluded.captured_at
+                    sistolica = excluded.sistolica,
+                    diastolica = excluded.diastolica,
+                    peso = excluded.peso,
+                    altura = excluded.altura,
+                    imc = excluded.imc,
+                    prioridad = excluded.prioridad,
+                    puntuacion_riesgo = excluded.puntuacion_riesgo,
+                    etiqueta_riesgo = excluded.etiqueta_riesgo,
+                    sistolica_predicha = excluded.sistolica_predicha,
+                    minutos_estimados = excluded.minutos_estimados,
+                    resumen_decision = excluded.resumen_decision,
+                    analisis_json = excluded.analisis_json,
+                    fuente = excluded.fuente,
+                    fecha_captura = excluded.fecha_captura
                 """,
                 (
-                    appointment_id,
-                    float(vitals["temperature"]),
-                    int(vitals["heart_rate"]),
+                    id_cita,
+                    float(vitals["temperatura"]),
+                    int(vitals["ritmo_cardiaco"]),
                     int(vitals["spO2"]),
-                    int(vitals["blood_pressure_systolic"]),
-                    int(vitals["blood_pressure_diastolic"]),
-                    float(vitals["weight"]),
-                    float(vitals["height"]),
-                    float(analysis["bmi"]),
-                    analysis["priority"],
+                    int(vitals["blood_pressure_sistolica"]),
+                    int(vitals["blood_pressure_diastolica"]),
+                    float(vitals["peso"]),
+                    float(vitals["altura"]),
+                    float(analysis["imc"]),
+                    analysis["prioridad"],
                     float(analysis["risk_probability"]),
-                    analysis["risk_label"],
-                    float(analysis["predicted_systolic"]),
-                    float(analysis["estimated_attention_minutes"]),
-                    analysis["decision_summary"],
+                    analysis["etiqueta_riesgo"],
+                    float(analysis["sistolica_predicha"]),
+                    float(analysis["minutos_estimados"]),
+                    analysis["resumen_decision"],
                     json.dumps(analysis),
-                    source,
-                    captured_at,
+                    fuente,
+                    fecha_captura,
                 ),
             )
-            next_status = "triaged"
+            next_estado = "triedadd"
             conn.execute(
                 """
-                UPDATE appointments
-                SET status = ?,
-                    triage_status = 'done',
-                    consultation_status = 'waiting'
+                UPDATE citas
+                SET estado = ?,
+                    estado_triaje = 'done',
+                    estado_consulta = 'waiting'
                 WHERE id = ?
                 """,
-                (next_status, appointment_id),
+                (next_estado, id_cita),
             )
-            active = conn.execute(
-                "SELECT value FROM settings WHERE key = 'active_triage_appointment_id'"
+            activo = conn.execute(
+                "SELECT valor FROM configuracion WHERE clave = 'activo_triedad_id_cita'"
             ).fetchone()
-            if active and active["value"] == str(appointment_id):
-                self._set_setting(conn, "active_triage_appointment_id", None)
-            self._audit(conn, "triage_captured", "triage_records", appointment_id, f"Triaje {analysis['priority']} registrado")
-        appointment = self.get_appointment(appointment_id)
+            if activo and activo["valor"] == str(id_cita):
+                self._set_setting(conn, "activo_triedad_id_cita", None)
+            self._audit(conn, "triedad_captured", "expedientes", id_cita, f"Triaje {analysis['prioridad']} registrado")
+        appointment = self.get_appointment(id_cita)
         if appointment is None:
             raise RuntimeError("No se pudo recuperar la cita con triaje.")
         return appointment
 
-    def create_consultation(self, appointment_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
-        symptoms = str(payload.get("symptoms") or "").strip()
-        diagnosis = str(payload.get("diagnosis") or "").strip()
-        treatment_notes = str(payload.get("treatment_notes") or "").strip()
-        notes = str(payload.get("notes") or "").strip()
-        doctor_name = str(payload.get("doctor_name") or "").strip()
-        items = [item for item in payload.get("prescription_items") or [] if item.get("medicine")]
+    def create_consultation(self, id_cita: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+        sintomas = str(payload.get("sintomas") or "").strip()
+        diagnostico = str(payload.get("diagnostico") or "").strip()
+        tratamiento_notas = str(payload.get("tratamiento_notas") or "").strip()
+        notas = str(payload.get("notas") or "").strip()
+        nombre_medico = str(payload.get("nombre_medico") or "").strip()
+        items = [item for item in payload.get("receta_items") or [] if item.get("medicamento")]
 
-        if not diagnosis:
+        if not diagnostico:
             raise ValueError("El diagnostico es obligatorio.")
 
         with self._connect() as conn:
             appointment = conn.execute(
                 """
-                SELECT a.*, s.doctor_name
-                FROM appointments a
-                JOIN specialties s ON s.id = a.specialty_id
+                SELECT a.*, s.nombre_medico
+                FROM citas a
+                JOIN especialidades s ON s.id = a.id_especialidad
                 WHERE a.id = ?
                 """,
-                (appointment_id,),
+                (id_cita,),
             ).fetchone()
             if appointment is None:
                 raise ValueError("Cita no encontrada.")
-            doctor_name = doctor_name or appointment["doctor_name"]
+            nombre_medico = nombre_medico or appointment["nombre_medico"]
 
             existing = conn.execute(
-                "SELECT id FROM consultations WHERE appointment_id = ?", (appointment_id,)
+                "SELECT id FROM consultas WHERE id_cita = ?", (id_cita,)
             ).fetchone()
             if existing:
-                consultation_id = int(existing["id"])
+                id_consulta = int(existing["id"])
                 conn.execute(
                     """
-                    UPDATE consultations
-                    SET doctor_name = ?, symptoms = ?, diagnosis = ?, treatment_notes = ?, notes = ?
+                    UPDATE consultas
+                    SET nombre_medico = ?, sintomas = ?, diagnostico = ?, tratamiento_notas = ?, notas = ?
                     WHERE id = ?
                     """,
-                    (doctor_name, symptoms, diagnosis, treatment_notes, notes, consultation_id),
+                    (nombre_medico, sintomas, diagnostico, tratamiento_notas, notas, id_consulta),
                 )
             else:
                 cursor = conn.execute(
                     """
-                    INSERT INTO consultations (
-                        appointment_id, doctor_name, symptoms, diagnosis, treatment_notes, notes, created_at
+                    INSERT INTO consultas (
+                        id_cita, nombre_medico, sintomas, diagnostico, tratamiento_notas, notas, fecha_creacion
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (appointment_id, doctor_name, symptoms, diagnosis, treatment_notes, notes, utc_now()),
+                    (id_cita, nombre_medico, sintomas, diagnostico, tratamiento_notas, notas, utc_now()),
                 )
-                consultation_id = int(cursor.lastrowid)
+                id_consulta = int(cursor.lastrowid)
 
-            old_prescriptions = conn.execute(
-                "SELECT id, status FROM prescriptions WHERE appointment_id = ?", (appointment_id,)
+            old_recetas = conn.execute(
+                "SELECT id, estado FROM recetas WHERE id_cita = ?", (id_cita,)
             ).fetchall()
-            for old in old_prescriptions:
-                if old["status"] != "dispensed":
-                    conn.execute("DELETE FROM prescriptions WHERE id = ?", (old["id"],))
+            for old in old_recetas:
+                if old["estado"] != "dispensed":
+                    conn.execute("DELETE FROM recetas WHERE id = ?", (old["id"],))
 
             total = 0.0
-            prescription_id: Optional[int] = None
+            id_receta: Optional[int] = None
             if items:
                 normalized_items = []
                 for item in items:
-                    quantity = max(1, int(item.get("quantity") or 1))
-                    unit_price = max(0.0, float(item.get("unit_price") or 0))
-                    days = max(1, int(item.get("days") or 1))
+                    cantidad = max(1, int(item.get("cantidad") or 1))
+                    unit_precio = max(0.0, float(item.get("unit_precio") or 0))
+                    dias = max(1, int(item.get("dias") or 1))
                     normalized_items.append(
                         {
-                            "medicine": str(item.get("medicine") or "").strip(),
-                            "dosage": str(item.get("dosage") or "").strip(),
-                            "frequency": str(item.get("frequency") or "").strip(),
-                            "days": days,
-                            "quantity": quantity,
-                            "unit_price": unit_price,
+                            "medicamento": str(item.get("medicamento") or "").strip(),
+                            "dosis": str(item.get("dosis") or "").strip(),
+                            "frecuencia": str(item.get("frecuencia") or "").strip(),
+                            "dias": dias,
+                            "cantidad": cantidad,
+                            "unit_precio": unit_precio,
                         }
                     )
-                    total += quantity * unit_price
+                    total += cantidad * unit_precio
 
                 cursor = conn.execute(
                     """
-                    INSERT INTO prescriptions (appointment_id, consultation_id, status, total, created_at)
+                    INSERT INTO recetas (id_cita, id_consulta, estado, total, fecha_creacion)
                     VALUES (?, ?, 'pending', ?, ?)
                     """,
-                    (appointment_id, consultation_id, total, utc_now()),
+                    (id_cita, id_consulta, total, utc_now()),
                 )
-                prescription_id = int(cursor.lastrowid)
+                id_receta = int(cursor.lastrowid)
                 conn.executemany(
                     """
-                    INSERT INTO prescription_items (
-                        prescription_id, medicine, dosage, frequency, days, quantity, unit_price
+                    INSERT INTO receta_items (
+                        id_receta, medicamento, dosis, frecuencia, dias, cantidad, unit_precio
                     )
-                    VALUES (:prescription_id, :medicine, :dosage, :frequency, :days, :quantity, :unit_price)
+                    VALUES (:id_receta, :medicamento, :dosis, :frecuencia, :dias, :cantidad, :unit_precio)
                     """,
-                    [dict(item, prescription_id=prescription_id) for item in normalized_items],
+                    [dict(item, id_receta=id_receta) for item in normalized_items],
                 )
 
-            pharmacy_status = "pending" if prescription_id else "none"
-            status = "prescription_pending" if prescription_id else "completed"
+            estado_farmacia = "pending" if id_receta else "none"
+            estado = "prescription_pending" if id_receta else "completed"
             conn.execute(
                 """
-                UPDATE appointments
-                SET status = ?,
-                    consultation_status = 'done',
-                    pharmacy_status = ?
+                UPDATE citas
+                SET estado = ?,
+                    estado_consulta = 'done',
+                    estado_farmacia = ?
                 WHERE id = ?
                 """,
-                (status, pharmacy_status, appointment_id),
+                (estado, estado_farmacia, id_cita),
             )
-            self._audit(conn, "consultation_saved", "consultations", consultation_id, "Consulta medica registrada")
-        appointment_data = self.get_appointment(appointment_id)
+            self._audit(conn, "consultation_saved", "consultas", id_consulta, "Consulta medica registrada")
+        appointment_data = self.get_appointment(id_cita)
         if appointment_data is None:
             raise RuntimeError("No se pudo recuperar la consulta.")
         return appointment_data
 
     def dispense_prescription(
         self,
-        prescription_id: int,
-        payment_method: str = "Efectivo",
-        created_by: Optional[str] = None,
+        id_receta: int,
+        metodo_pago: str = "Efectivo",
+        creado_por: Optional[str] = None,
     ) -> Dict[str, Any]:
         with self._connect() as conn:
             prescription = conn.execute(
@@ -1534,163 +1557,163 @@ class SQLiteRepository(BaseRepository):
                 SELECT
                     pr.*,
                     a.ticket,
-                    p.document AS patient_document,
-                    p.first_name || ' ' || p.last_name AS patient_name
-                FROM prescriptions pr
-                JOIN appointments a ON a.id = pr.appointment_id
-                JOIN patients p ON p.id = a.patient_id
+                    p.documento AS documento_paciente,
+                    p.nombre || ' ' || p.apellido AS nombre_paciente
+                FROM recetas pr
+                JOIN citas a ON a.id = pr.id_cita
+                JOIN pacientes p ON p.id = a.id_paciente
                 WHERE pr.id = ?
                 """,
-                (prescription_id,),
+                (id_receta,),
             ).fetchone()
             if prescription is None:
                 raise ValueError("Receta no encontrada.")
             items = conn.execute(
-                "SELECT medicine, quantity FROM prescription_items WHERE prescription_id = ?",
-                (prescription_id,),
+                "SELECT medicamento, cantidad FROM receta_items WHERE id_receta = ?",
+                (id_receta,),
             ).fetchall()
             conn.execute(
                 """
-                UPDATE prescriptions
-                SET status = 'dispensed', dispensed_at = ?
+                UPDATE recetas
+                SET estado = 'dispensed', fecha_dispensacion = ?
                 WHERE id = ?
                 """,
-                (utc_now(), prescription_id),
+                (utc_now(), id_receta),
             )
             conn.execute(
                 """
-                UPDATE appointments
-                SET status = 'completed', pharmacy_status = 'dispensed'
+                UPDATE citas
+                SET estado = 'completed', estado_farmacia = 'dispensed'
                 WHERE id = ?
                 """,
-                (prescription["appointment_id"],),
+                (prescription["id_cita"],),
             )
             for item in items:
                 conn.execute(
                     """
-                    UPDATE medications
+                    UPDATE medicamentos
                     SET stock = CASE WHEN stock >= ? THEN stock - ? ELSE 0 END
-                    WHERE lower(name) = lower(?) AND active = 1
+                    WHERE lower(nombre) = lower(?) AND activo = 1
                     """,
-                    (int(item["quantity"]), int(item["quantity"]), item["medicine"]),
+                    (int(item["cantidad"]), int(item["cantidad"]), item["medicamento"]),
                 )
             self._record_transaction(
                 conn,
-                module="pharmacy",
-                reference_type="prescription",
-                reference_id=prescription_id,
-                patient_document=prescription["patient_document"],
-                patient_name=prescription["patient_name"],
-                concept=f"Medicamentos - {prescription['ticket']}",
-                amount=float(prescription["total"] or 0),
-                payment_method=payment_method,
-                created_by=created_by,
+                modulo="pharmacy",
+                tipo_referencia="prescription",
+                id_referencia=id_receta,
+                documento_paciente=prescription["documento_paciente"],
+                nombre_paciente=prescription["nombre_paciente"],
+                concepto=f"Medicamentos - {prescription['ticket']}",
+                monto=float(prescription["total"] or 0),
+                metodo_pago=metodo_pago,
+                creado_por=creado_por,
             )
-            self._audit(conn, "prescription_dispensed", "prescriptions", prescription_id, "Medicamentos entregados")
-        return self.list_prescription(prescription_id)
+            self._audit(conn, "prescription_dispensed", "recetas", id_receta, "Medicamentos entregados")
+        return self.list_prescription(id_receta)
 
-    def list_prescription(self, prescription_id: int) -> Dict[str, Any]:
+    def list_prescription(self, id_receta: int) -> Dict[str, Any]:
         return next(
-            item for item in self.list_prescriptions() if int(item["id"]) == int(prescription_id)
+            item for item in self.list_recetas() if int(item["id"]) == int(id_receta)
         )
 
-    def list_prescriptions(self) -> List[Dict[str, Any]]:
+    def list_recetas(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
                 """
                 SELECT
                     pr.*,
-                    p.first_name || ' ' || p.last_name AS patient_name,
-                    p.document AS patient_document,
+                    p.nombre || ' ' || p.apellido AS nombre_paciente,
+                    p.documento AS documento_paciente,
                     a.ticket,
-                    s.name AS specialty_name,
-                    s.room,
-                    c.diagnosis
-                FROM prescriptions pr
-                JOIN appointments a ON a.id = pr.appointment_id
-                JOIN patients p ON p.id = a.patient_id
-                JOIN specialties s ON s.id = a.specialty_id
-                JOIN consultations c ON c.id = pr.consultation_id
+                    s.nombre AS especialidad_nombre,
+                    s.consultorio,
+                    c.diagnostico
+                FROM recetas pr
+                JOIN citas a ON a.id = pr.id_cita
+                JOIN pacientes p ON p.id = a.id_paciente
+                JOIN especialidades s ON s.id = a.id_especialidad
+                JOIN consultas c ON c.id = pr.id_consulta
                 ORDER BY pr.id DESC
                 """
             ).fetchall()
-            item_rows = conn.execute("SELECT * FROM prescription_items ORDER BY id").fetchall()
+            item_rows = conn.execute("SELECT * FROM receta_items ORDER BY id").fetchall()
         items_by_prescription: Dict[int, List[Dict[str, Any]]] = {}
         for row in item_rows:
-            items_by_prescription.setdefault(int(row["prescription_id"]), []).append(dict(row))
-        prescriptions = []
+            items_by_prescription.setdefault(int(row["id_receta"]), []).append(dict(row))
+        recetas = []
         for row in rows:
             item = dict(row)
             item["items"] = items_by_prescription.get(int(row["id"]), [])
-            prescriptions.append(item)
-        return prescriptions
+            recetas.append(item)
+        return recetas
 
-    def list_transactions(self) -> List[Dict[str, Any]]:
+    def list_transacciones(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
                 """
                 SELECT *
-                FROM transactions
+                FROM transacciones
                 ORDER BY id DESC
                 """
             ).fetchall()
         return [dict(row) for row in rows]
 
     def stats(self) -> Dict[str, int]:
-        appointments = self.list_appointments()
-        prescriptions = self.list_prescriptions()
+        citas = self.list_citas()
+        recetas = self.list_recetas()
         return {
-            "registered": len(appointments),
-            "pending_payment": len([item for item in appointments if item["payment_status"] == "pending"]),
-            "waiting_triage": len([item for item in appointments if item["triage_status"] in {"waiting", "in_progress"}]),
-            "waiting_consultation": len([item for item in appointments if item["consultation_status"] == "waiting"]),
-            "pending_pharmacy": len([item for item in prescriptions if item["status"] == "pending"]),
-            "completed": len([item for item in appointments if item["status"] == "completed"]),
+            "registered": len(citas),
+            "pending_payment": len([item for item in citas if item["estado_pago"] == "pending"]),
+            "waiting_triedad": len([item for item in citas if item["estado_triaje"] in {"waiting", "in_progress"}]),
+            "waiting_consultation": len([item for item in citas if item["estado_consulta"] == "waiting"]),
+            "pending_pharmacy": len([item for item in recetas if item["estado"] == "pending"]),
+            "completed": len([item for item in citas if item["estado"] == "completed"]),
         }
 
-    def get_setting(self, key: str) -> Optional[str]:
+    def get_setting(self, clave: str) -> Optional[str]:
         with self._connect() as conn:
-            row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
-        return None if row is None else row["value"]
+            row = conn.execute("SELECT valor FROM configuracion WHERE clave = ?", (clave,)).fetchone()
+        return None if row is None else row["valor"]
 
-    def set_setting(self, key: str, value: Optional[str]) -> None:
+    def set_setting(self, clave: str, valor: Optional[str]) -> None:
         with self._connect() as conn:
-            self._set_setting(conn, key, value)
+            self._set_setting(conn, clave, valor)
 
     @staticmethod
-    def _set_setting(conn: sqlite3.Connection, key: str, value: Optional[str]) -> None:
-        if value is None:
-            conn.execute("DELETE FROM settings WHERE key = ?", (key,))
+    def _set_setting(conn: sqlite3.Connection, clave: str, valor: Optional[str]) -> None:
+        if valor is None:
+            conn.execute("DELETE FROM configuracion WHERE clave = ?", (clave,))
         else:
             conn.execute(
                 """
-                INSERT INTO settings (key, value)
+                INSERT INTO configuracion (clave, valor)
                 VALUES (?, ?)
-                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor
                 """,
-                (key, value),
+                (clave, valor),
             )
 
-    def authenticate_user(self, username: str, password: str) -> Optional[Dict[str, Any]]:
+    def authenticate_user(self, nombre_usuario: str, contrasena: str) -> Optional[Dict[str, Any]]:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT id, username, full_name, role, active 
-                FROM users 
-                WHERE username = ? AND password = ? AND active = 1
+                SELECT id, nombre_usuario, nombre_completo, rol, activo 
+                FROM usuarios 
+                WHERE nombre_usuario = ? AND contrasena = ? AND activo = 1
                 """,
-                (username, password),
+                (nombre_usuario, contrasena),
             ).fetchone()
             return dict(row) if row else None
 
-    def list_users(self) -> List[Dict[str, Any]]:
+    def list_usuarios(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT id, username, full_name, role, active FROM users ORDER BY id").fetchall()
+            rows = conn.execute("SELECT id, nombre_usuario, nombre_completo, rol, activo FROM usuarios ORDER BY id").fetchall()
         return [dict(row) for row in rows]
 
-    def list_patients(self) -> List[Dict[str, Any]]:
+    def list_pacientes(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT * FROM patients WHERE active = 1 ORDER BY id DESC").fetchall()
+            rows = conn.execute("SELECT * FROM pacientes WHERE activo = 1 ORDER BY id DESC").fetchall()
         return [dict(row) for row in rows]
 
     def create_patient(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -1698,73 +1721,73 @@ class SQLiteRepository(BaseRepository):
         with self._connect() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO patients (
-                    document, first_name, last_name, age, sex, birth_date, phone, active, created_at
+                INSERT INTO pacientes (
+                    documento, nombre, apellido, edad, sexo, fecha_nacimiento, telefono, activo, fecha_creacion
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
                 """,
                 (
-                    data["document"],
-                    data["first_name"],
-                    data["last_name"],
-                    data["age"],
-                    data["sex"],
-                    data["birth_date"],
-                    data["phone"],
+                    data["documento"],
+                    data["nombre"],
+                    data["apellido"],
+                    data["edad"],
+                    data["sexo"],
+                    data["fecha_nacimiento"],
+                    data["telefono"],
                     utc_now(),
                 ),
             )
-            patient_id = int(cursor.lastrowid)
-        patient = self.get_patient(patient_id)
+            id_paciente = int(cursor.lastrowid)
+        patient = self.get_patient(id_paciente)
         if patient is None:
             raise RuntimeError("No se pudo recuperar el paciente.")
         return patient
 
-    def get_patient(self, patient_id: int) -> Optional[Dict[str, Any]]:
+    def get_patient(self, id_paciente: int) -> Optional[Dict[str, Any]]:
         with self._connect() as conn:
-            row = conn.execute("SELECT * FROM patients WHERE id = ?", (patient_id,)).fetchone()
+            row = conn.execute("SELECT * FROM pacientes WHERE id = ?", (id_paciente,)).fetchone()
         return dict(row) if row else None
 
-    def update_patient(self, patient_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
-        current = self.get_patient(patient_id)
+    def update_patient(self, id_paciente: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+        current = self.get_patient(id_paciente)
         if current is None:
             raise ValueError("Paciente no encontrado.")
         data = _validate_patient_payload({**current, **payload})
         with self._connect() as conn:
             conn.execute(
                 """
-                UPDATE patients
-                SET document = ?, first_name = ?, last_name = ?, age = ?, sex = ?, birth_date = ?, phone = ?
+                UPDATE pacientes
+                SET documento = ?, nombre = ?, apellido = ?, edad = ?, sexo = ?, fecha_nacimiento = ?, telefono = ?
                 WHERE id = ?
                 """,
                 (
-                    data["document"],
-                    data["first_name"],
-                    data["last_name"],
-                    data["age"],
-                    data["sex"],
-                    data["birth_date"],
-                    data["phone"],
-                    patient_id,
+                    data["documento"],
+                    data["nombre"],
+                    data["apellido"],
+                    data["edad"],
+                    data["sexo"],
+                    data["fecha_nacimiento"],
+                    data["telefono"],
+                    id_paciente,
                 ),
             )
-        patient = self.get_patient(patient_id)
+        patient = self.get_patient(id_paciente)
         if patient is None:
             raise RuntimeError("No se pudo recuperar el paciente actualizado.")
         return patient
 
-    def delete_patient(self, patient_id: int) -> None:
+    def delete_patient(self, id_paciente: int) -> None:
         with self._connect() as conn:
-            conn.execute("UPDATE patients SET active = 0 WHERE id = ?", (patient_id,))
+            conn.execute("UPDATE pacientes SET activo = 0 WHERE id = ?", (id_paciente,))
 
-    def search_patients(self, query: str) -> List[Dict[str, Any]]:
+    def search_pacientes(self, query: str) -> List[Dict[str, Any]]:
         term = f"%{query.strip()}%"
         with self._connect() as conn:
             rows = conn.execute(
                 """
-                SELECT * FROM patients
-                WHERE active = 1
-                  AND (document LIKE ? OR first_name LIKE ? OR last_name LIKE ?)
+                SELECT * FROM pacientes
+                WHERE activo = 1
+                  AND (documento LIKE ? OR nombre LIKE ? OR apellido LIKE ?)
                 ORDER BY id DESC
                 LIMIT 25
                 """,
@@ -1772,14 +1795,14 @@ class SQLiteRepository(BaseRepository):
             ).fetchall()
         return [dict(row) for row in rows]
 
-    def list_workers(self) -> List[Dict[str, Any]]:
+    def list_trabajadores(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT * FROM workers WHERE active = 1 ORDER BY id DESC").fetchall()
+            rows = conn.execute("SELECT * FROM trabajadores WHERE activo = 1 ORDER BY id DESC").fetchall()
         return [dict(row) for row in rows]
 
     def get_worker(self, worker_id: int) -> Optional[Dict[str, Any]]:
         with self._connect() as conn:
-            row = conn.execute("SELECT * FROM workers WHERE id = ?", (worker_id,)).fetchone()
+            row = conn.execute("SELECT * FROM trabajadores WHERE id = ?", (worker_id,)).fetchone()
         return dict(row) if row else None
 
     def create_worker(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -1787,21 +1810,21 @@ class SQLiteRepository(BaseRepository):
         with self._connect() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO workers (
-                    document, first_name, last_name, role, specialty, age, sex, birth_date, phone, active, created_at
+                INSERT INTO trabajadores (
+                    documento, nombre, apellido, rol, specialty, edad, sexo, fecha_nacimiento, telefono, activo, fecha_creacion
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
                 """,
                 (
-                    data["document"],
-                    data["first_name"],
-                    data["last_name"],
-                    data["role"],
+                    data["documento"],
+                    data["nombre"],
+                    data["apellido"],
+                    data["rol"],
                     data["specialty"],
-                    data["age"],
-                    data["sex"],
-                    data["birth_date"],
-                    data["phone"],
+                    data["edad"],
+                    data["sexo"],
+                    data["fecha_nacimiento"],
+                    data["telefono"],
                     utc_now(),
                 ),
             )
@@ -1819,21 +1842,21 @@ class SQLiteRepository(BaseRepository):
         with self._connect() as conn:
             conn.execute(
                 """
-                UPDATE workers
-                SET document = ?, first_name = ?, last_name = ?, role = ?, specialty = ?,
-                    age = ?, sex = ?, birth_date = ?, phone = ?
+                UPDATE trabajadores
+                SET documento = ?, nombre = ?, apellido = ?, rol = ?, specialty = ?,
+                    edad = ?, sexo = ?, fecha_nacimiento = ?, telefono = ?
                 WHERE id = ?
                 """,
                 (
-                    data["document"],
-                    data["first_name"],
-                    data["last_name"],
-                    data["role"],
+                    data["documento"],
+                    data["nombre"],
+                    data["apellido"],
+                    data["rol"],
                     data["specialty"],
-                    data["age"],
-                    data["sex"],
-                    data["birth_date"],
-                    data["phone"],
+                    data["edad"],
+                    data["sexo"],
+                    data["fecha_nacimiento"],
+                    data["telefono"],
                     worker_id,
                 ),
             )
@@ -1844,11 +1867,11 @@ class SQLiteRepository(BaseRepository):
 
     def delete_worker(self, worker_id: int) -> None:
         with self._connect() as conn:
-            conn.execute("UPDATE workers SET active = 0 WHERE id = ?", (worker_id,))
+            conn.execute("UPDATE trabajadores SET activo = 0 WHERE id = ?", (worker_id,))
 
     def list_consultorios(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT * FROM consultorios WHERE active = 1 ORDER BY name").fetchall()
+            rows = conn.execute("SELECT * FROM consultorios WHERE activo = 1 ORDER BY nombre").fetchall()
         return [dict(row) for row in rows]
 
     def get_consultorio(self, consultorio_id: int) -> Optional[Dict[str, Any]]:
@@ -1857,17 +1880,17 @@ class SQLiteRepository(BaseRepository):
         return dict(row) if row else None
 
     def create_consultorio(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        name = _required_text(payload.get("name"), "Nombre")
+        nombre = _required_text(payload.get("nombre"), "Nombre")
         floor = _required_text(payload.get("floor"), "Piso")
         equipment = _required_text(payload.get("equipment"), "Equipamiento")
         with self._connect() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO consultorios (name, floor, equipment, active, created_at)
+                INSERT INTO consultorios (nombre, floor, equipment, activo, fecha_creacion)
                 VALUES (?, ?, ?, 1, ?)
                 """,
                 (
-                    name,
+                    nombre,
                     floor,
                     equipment,
                     utc_now(),
@@ -1884,18 +1907,18 @@ class SQLiteRepository(BaseRepository):
         if current is None:
             raise ValueError("Consultorio no encontrado.")
         data = {**current, **payload}
-        name = _required_text(data.get("name"), "Nombre")
+        nombre = _required_text(data.get("nombre"), "Nombre")
         floor = _required_text(data.get("floor"), "Piso")
         equipment = _required_text(data.get("equipment"), "Equipamiento")
         with self._connect() as conn:
             conn.execute(
                 """
                 UPDATE consultorios
-                SET name = ?, floor = ?, equipment = ?
+                SET nombre = ?, floor = ?, equipment = ?
                 WHERE id = ?
                 """,
                 (
-                    name,
+                    nombre,
                     floor,
                     equipment,
                     consultorio_id,
@@ -1908,37 +1931,37 @@ class SQLiteRepository(BaseRepository):
 
     def delete_consultorio(self, consultorio_id: int) -> None:
         with self._connect() as conn:
-            conn.execute("UPDATE consultorios SET active = 0 WHERE id = ?", (consultorio_id,))
+            conn.execute("UPDATE consultorios SET activo = 0 WHERE id = ?", (consultorio_id,))
 
-    def list_medications(self) -> List[Dict[str, Any]]:
+    def list_medicamentos(self) -> List[Dict[str, Any]]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT * FROM medications WHERE active = 1 ORDER BY name").fetchall()
+            rows = conn.execute("SELECT * FROM medicamentos WHERE activo = 1 ORDER BY nombre").fetchall()
         return [dict(row) for row in rows]
 
     def get_medication(self, medication_id: int) -> Optional[Dict[str, Any]]:
         with self._connect() as conn:
-            row = conn.execute("SELECT * FROM medications WHERE id = ?", (medication_id,)).fetchone()
+            row = conn.execute("SELECT * FROM medicamentos WHERE id = ?", (medication_id,)).fetchone()
         return dict(row) if row else None
 
     def create_medication(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        name = _required_text(payload.get("name"), "Nombre")
+        nombre = _required_text(payload.get("nombre"), "Nombre")
         description = _required_text(payload.get("description"), "Descripcion")
-        price = float(payload.get("price") or 0)
+        precio = float(payload.get("precio") or 0)
         stock = int(payload.get("stock") or 0)
-        if price < 0:
+        if precio < 0:
             raise ValueError("Precio no puede ser negativo.")
         if stock < 0:
             raise ValueError("Stock no puede ser negativo.")
         with self._connect() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO medications (name, description, price, stock, active, created_at)
+                INSERT INTO medicamentos (nombre, description, precio, stock, activo, fecha_creacion)
                 VALUES (?, ?, ?, ?, 1, ?)
                 """,
                 (
-                    name,
+                    nombre,
                     description,
-                    price,
+                    precio,
                     stock,
                     utc_now(),
                 ),
@@ -1954,25 +1977,25 @@ class SQLiteRepository(BaseRepository):
         if current is None:
             raise ValueError("Medicamento no encontrado.")
         data = {**current, **payload}
-        name = _required_text(data.get("name"), "Nombre")
+        nombre = _required_text(data.get("nombre"), "Nombre")
         description = _required_text(data.get("description"), "Descripcion")
-        price = float(data.get("price") or 0)
+        precio = float(data.get("precio") or 0)
         stock = int(data.get("stock") or 0)
-        if price < 0:
+        if precio < 0:
             raise ValueError("Precio no puede ser negativo.")
         if stock < 0:
             raise ValueError("Stock no puede ser negativo.")
         with self._connect() as conn:
             conn.execute(
                 """
-                UPDATE medications
-                SET name = ?, description = ?, price = ?, stock = ?
+                UPDATE medicamentos
+                SET nombre = ?, description = ?, precio = ?, stock = ?
                 WHERE id = ?
                 """,
                 (
-                    name,
+                    nombre,
                     description,
-                    price,
+                    precio,
                     stock,
                     medication_id,
                 ),
@@ -1984,486 +2007,533 @@ class SQLiteRepository(BaseRepository):
 
     def delete_medication(self, medication_id: int) -> None:
         with self._connect() as conn:
-            conn.execute("UPDATE medications SET active = 0 WHERE id = ?", (medication_id,))
+            conn.execute("UPDATE medicamentos SET activo = 0 WHERE id = ?", (medication_id,))
 
-    @staticmethod
+    # Aliases for compatibility
+    def list_patients(self):
+        return self.list_pacientes()
+
+    def search_patients(self, query: str):
+        return self.search_pacientes(query)
+
+    def list_specialties(self):
+        return self.list_especialidades()
+
+    def list_appointments(self):
+        return self.list_citas()
+
+    def get_patient(self, id_paciente):
+        rows = self.list_pacientes()
+        for row in rows:
+            if row['id'] == id_paciente:
+                return row
+        return None
+
+    def get_appointment(self, id_cita):
+        rows = self.list_citas()
+        for row in rows:
+            if row['id'] == id_cita:
+                return row
+        return None
+
+    def set_active_triage(self, id_cita):
+        return self.set_activo_triedad(id_cita)
+
+    def capture_triage(self, id_cita, vitals, analysis, source):
+        return self.capture_triage(id_cita, vitals, analysis, source)
+
+    def list_workers(self):
+        return self.list_trabajadores()
+
+    def list_medications(self):
+        return self.list_medicamentos()
+
+    def list_transactions(self):
+        return self.list_transacciones()
+
+    def update_user(self, user_id, payload):
+        return None
+
+    def create_user(self, payload):
+        return None
+    
     def _next_ticket(conn: sqlite3.Connection) -> str:
-        count = conn.execute("SELECT COUNT(*) FROM appointments").fetchone()[0] + 1
+        count = conn.execute("SELECT COUNT(*) FROM citas").fetchone()[0] + 1
         return f"A{count:04d}"
 
     @staticmethod
-    def _next_transaction_code(conn: sqlite3.Connection, module: str) -> str:
-        prefix = {"cashier": "CJ", "pharmacy": "FA"}.get(module, "TX")
+    def _next_codigo_transaccion(conn: sqlite3.Connection, modulo: str) -> str:
+        prefix = {"cashier": "CJ", "pharmacy": "FA"}.get(modulo, "TX")
         count = conn.execute(
-            "SELECT COUNT(*) FROM transactions WHERE module = ?", (module,)
+            "SELECT COUNT(*) FROM transacciones WHERE modulo = ?", (modulo,)
         ).fetchone()[0] + 1
         return f"{prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}-{count:04d}"
 
     def _record_transaction(
         self,
         conn: sqlite3.Connection,
-        module: str,
-        reference_type: str,
-        reference_id: int,
-        patient_document: str,
-        patient_name: str,
-        concept: str,
-        amount: float,
-        payment_method: str = "Efectivo",
-        created_by: Optional[str] = None,
+        modulo: str,
+        tipo_referencia: str,
+        id_referencia: int,
+        documento_paciente: str,
+        nombre_paciente: str,
+        concepto: str,
+        monto: float,
+        metodo_pago: str = "Efectivo",
+        creado_por: Optional[str] = None,
     ) -> Dict[str, Any]:
         existing = conn.execute(
             """
             SELECT *
-            FROM transactions
-            WHERE module = ? AND reference_type = ? AND reference_id = ? AND status = 'paid'
+            FROM transacciones
+            WHERE modulo = ? AND tipo_referencia = ? AND id_referencia = ? AND estado = 'paid'
             LIMIT 1
             """,
-            (module, reference_type, reference_id),
+            (modulo, tipo_referencia, id_referencia),
         ).fetchone()
         if existing:
             return dict(existing)
 
         conn.execute(
             """
-            INSERT INTO transactions (
-                transaction_code, module, reference_type, reference_id, patient_document,
-                patient_name, concept, amount, payment_method, status, created_by, created_at
+            INSERT INTO transacciones (
+                codigo_transaccion, modulo, tipo_referencia, id_referencia, documento_paciente,
+                nombre_paciente, concepto, monto, metodo_pago, estado, creado_por, fecha_creacion
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', ?, ?)
             """,
             (
-                self._next_transaction_code(conn, module),
-                module,
-                reference_type,
-                reference_id,
-                patient_document,
-                patient_name,
-                concept,
-                max(0.0, float(amount or 0)),
-                _required_text(payment_method or "Efectivo", "Metodo de pago"),
-                created_by or "",
+                self._next_codigo_transaccion(conn, modulo),
+                modulo,
+                tipo_referencia,
+                id_referencia,
+                documento_paciente,
+                nombre_paciente,
+                concepto,
+                max(0.0, float(monto or 0)),
+                _required_text(metodo_pago or "Efectivo", "Metodo de pago"),
+                creado_por or "",
                 utc_now(),
             ),
         )
         row = conn.execute(
-            "SELECT * FROM transactions WHERE id = last_insert_rowid()"
+            "SELECT * FROM transacciones WHERE id = last_insert_rowid()"
         ).fetchone()
         return dict(row) if row else {}
 
     @staticmethod
     def _audit(
         conn: sqlite3.Connection,
-        event_type: str,
-        entity: str,
-        entity_id: Optional[int],
-        message: str,
+        tipo_evento: str,
+        entidad: str,
+        entidad_id: Optional[int],
+        mensaje: str,
     ) -> None:
         conn.execute(
             """
-            INSERT INTO audit_events (event_type, entity, entity_id, message, created_at)
+            INSERT INTO eventos_auditoria (tipo_evento, entidad, entidad_id, mensaje, fecha_creacion)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (event_type, entity, entity_id, message, utc_now()),
+            (tipo_evento, entidad, entidad_id, mensaje, utc_now()),
         )
 
     @staticmethod
     def _appointment_dict(
         row: sqlite3.Row,
-        triage: Optional[Dict[str, Any]],
+        triedad: Optional[Dict[str, Any]],
         consultation: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         return {
             "id": row["id"],
             "ticket": row["ticket"],
-            "status": row["status"],
-            "payment_status": row["payment_status"],
-            "triage_status": row["triage_status"],
-            "consultation_status": row["consultation_status"],
-            "pharmacy_status": row["pharmacy_status"],
-            "room": row["room"],
-            "scheduled_at": row["scheduled_at"],
-            "receipt_code": row["receipt_code"],
-            "created_at": row["created_at"],
-            "paid_at": row["paid_at"],
+            "estado": row["estado"],
+            "estado_pago": row["estado_pago"],
+            "estado_triaje": row["estado_triaje"],
+            "estado_consulta": row["estado_consulta"],
+            "estado_farmacia": row["estado_farmacia"],
+            "consultorio": row["consultorio"],
+            "fecha_programada": row["fecha_programada"],
+            "codigo_recibo": row["codigo_recibo"],
+            "fecha_creacion": row["fecha_creacion"],
+            "fecha_pago": row["fecha_pago"],
             "patient": {
-                "id": row["patient_id"],
-                "document": row["patient_document"],
-                "first_name": row["patient_first_name"],
-                "last_name": row["patient_last_name"],
-                "age": row["patient_age"],
-                "sex": row["patient_sex"],
-                "birth_date": row["patient_birth_date"],
-                "phone": row["patient_phone"],
-                "full_name": f"{row['patient_first_name']} {row['patient_last_name']}",
+                "id": row["id_paciente"],
+                "documento": row["documento_paciente"],
+                "nombre": row["patient_nombre"],
+                "apellido": row["patient_apellido"],
+                "edad": row["patient_edad"],
+                "sexo": row["patient_sexo"],
+                "fecha_nacimiento": row["patient_fecha_nacimiento"],
+                "telefono": row["patient_telefono"],
+                "nombre_completo": f"{row['patient_nombre']} {row['patient_apellido']}",
             },
             "specialty": {
-                "id": row["specialty_id"],
-                "name": row["specialty_name"],
-                "price": row["specialty_price"],
-                "duration_min": row["specialty_duration_min"],
-                "doctor_name": row["specialty_doctor_name"],
+                "id": row["id_especialidad"],
+                "nombre": row["especialidad_nombre"],
+                "precio": row["specialty_precio"],
+                "duracion_minutos": row["specialty_duracion_min"],
+                "nombre_medico": row["especialidad_nombre_medico"],
             },
-            "triage": triage,
+            "triedad": triedad,
             "consultation": consultation,
         }
 
     @staticmethod
-    def _triage_dict(row: sqlite3.Row) -> Dict[str, Any]:
+    def _triedad_dict(row: sqlite3.Row) -> Dict[str, Any]:
         data = dict(row)
-        data["analysis"] = json.loads(data.get("analysis_json") or "{}")
+        data["analysis"] = json.loads(data.get("analisis_json") or "{}")
         return data
 
 
 class SupabaseRepository(BaseRepository):
     """REST adapter for Supabase. It expects supabase_schema.sql to be applied."""
 
-    def __init__(self, url: str, key: str) -> None:
+    def __init__(self, url: str, clave: str) -> None:
         self.url = url.rstrip("/")
-        self.key = key
+        self.clave = clave
 
     def setup(self) -> None:
-        if not self.list_specialties():
+        if not self.list_especialidades():
             for specialty in DEFAULT_SPECIALTIES:
-                self._insert("specialties", specialty)
+                self._insert("especialidades", specialty)
 
     def snapshot(self) -> Dict[str, Any]:
-        appointments = self.list_appointments()
-        prescriptions = self.list_prescriptions()
+        citas = self.list_citas()
+        recetas = self.list_recetas()
         return {
-            "specialties": self.list_specialties(),
-            "appointments": appointments,
-            "prescriptions": prescriptions,
-            "stats": self._stats(appointments, prescriptions),
-            "active_triage_appointment_id": self.get_setting("active_triage_appointment_id"),
+            "especialidades": self.list_especialidades(),
+            "citas": citas,
+            "recetas": recetas,
+            "stats": self._stats(citas, recetas),
+            "activo_triedad_id_cita": self.get_setting("activo_triedad_id_cita"),
         }
 
-    def list_specialties(self) -> List[Dict[str, Any]]:
-        return self._select("specialties", {"select": "*", "order": "id.asc"})
+    def list_especialidades(self) -> List[Dict[str, Any]]:
+        return self._select("especialidades", {"select": "*", "order": "id.asc"})
 
-    def get_appointment(self, appointment_id: int) -> Optional[Dict[str, Any]]:
+    def get_appointment(self, id_cita: int) -> Optional[Dict[str, Any]]:
         return next(
-            (item for item in self.list_appointments() if int(item["id"]) == int(appointment_id)),
+            (item for item in self.list_citas() if int(item["id"]) == int(id_cita)),
             None,
         )
 
-    def list_appointments(self) -> List[Dict[str, Any]]:
-        appointments = self._select("appointments", {"select": "*", "order": "id.desc"})
-        patients = {item["id"]: item for item in self._select("patients", {"select": "*"})}
-        specialties = {item["id"]: item for item in self.list_specialties()}
-        triage = {
-            item["appointment_id"]: self._triage_dict(item)
-            for item in self._select("triage_records", {"select": "*"})
+    def list_citas(self) -> List[Dict[str, Any]]:
+        citas = self._select("citas", {"select": "*", "order": "id.desc"})
+        pacientes = {item["id"]: item for item in self._select("pacientes", {"select": "*"})}
+        especialidades = {item["id"]: item for item in self.list_especialidades()}
+        triedad = {
+            item["id_cita"]: self._triedad_dict(item)
+            for item in self._select("expedientes", {"select": "*"})
         }
-        consultations = {
-            item["appointment_id"]: item for item in self._select("consultations", {"select": "*"})
+        consultas = {
+            item["id_cita"]: item for item in self._select("consultas", {"select": "*"})
         }
         results = []
-        for row in appointments:
-            patient = patients.get(row["patient_id"], {})
-            specialty = specialties.get(row["specialty_id"], {})
+        for row in citas:
+            patient = pacientes.get(row["id_paciente"], {})
+            specialty = especialidades.get(row["id_especialidad"], {})
             results.append(
                 {
                     **row,
                     "patient": {
                         **patient,
-                        "full_name": f"{patient.get('first_name', '')} {patient.get('last_name', '')}".strip(),
+                        "nombre_completo": f"{patient.get('nombre', '')} {patient.get('apellido', '')}".strip(),
                     },
                     "specialty": specialty,
-                    "triage": triage.get(row["id"]),
-                    "consultation": consultations.get(row["id"]),
+                    "triedad": triedad.get(row["id"]),
+                    "consultation": consultas.get(row["id"]),
                 }
             )
         return results
 
     def create_patient_and_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        document = _validate_document(payload.get("document"))
-        first_name = _required_text(payload.get("first_name"), "Nombres")
-        last_name = _required_text(payload.get("last_name"), "Apellidos")
-        age = _validate_age(payload.get("age"))
-        sex = _required_text(payload.get("sex") or "No especificado", "Sexo")
-        phone = _validate_phone(payload.get("phone"))
-        specialty_id = int(payload.get("specialty_id") or 0)
-        if specialty_id <= 0:
+        documento = _validate_documento(payload.get("documento"))
+        nombre = _required_text(payload.get("nombre"), "Nombres")
+        apellido = _required_text(payload.get("apellido"), "Apellidos")
+        edad = _validate_edad(payload.get("edad"))
+        sexo = _required_text(payload.get("sexo") or "No especificado", "Sexo")
+        telefono = _validate_telefono(payload.get("telefono"))
+        id_especialidad = int(payload.get("id_especialidad") or 0)
+        if id_especialidad <= 0:
             raise ValueError("Faltan datos obligatorios del paciente o especialidad.")
 
         existing = self._select(
-            "patients", {"select": "*", "document": f"eq.{document}", "limit": "1"}
+            "pacientes", {"select": "*", "documento": f"eq.{documento}", "limit": "1"}
         )
         patient_payload = {
-            "document": document,
-            "first_name": first_name,
-            "last_name": last_name,
-            "age": age,
-            "sex": sex,
-            "phone": phone,
+            "documento": documento,
+            "nombre": nombre,
+            "apellido": apellido,
+            "edad": edad,
+            "sexo": sexo,
+            "telefono": telefono,
         }
         if existing:
-            patient = self._patch("patients", {"id": f"eq.{existing[0]['id']}"}, patient_payload)[0]
+            patient = self._patch("pacientes", {"id": f"eq.{existing[0]['id']}"}, patient_payload)[0]
         else:
-            patient = self._insert("patients", {**patient_payload, "created_at": utc_now()})[0]
+            patient = self._insert("pacientes", {**patient_payload, "fecha_creacion": utc_now()})[0]
 
         ticket = self._next_ticket()
         appointment = self._insert(
-            "appointments",
+            "citas",
             {
                 "ticket": ticket,
-                "patient_id": patient["id"],
-                "specialty_id": specialty_id,
-                "status": "registered",
-                "payment_status": "pending",
-                "triage_status": "not_started",
-                "consultation_status": "not_started",
-                "pharmacy_status": "none",
-                "created_at": utc_now(),
+                "id_paciente": patient["id"],
+                "id_especialidad": id_especialidad,
+                "estado": "registered",
+                "estado_pago": "pending",
+                "estado_triaje": "not_started",
+                "estado_consulta": "not_started",
+                "estado_farmacia": "none",
+                "fecha_creacion": utc_now(),
             },
         )[0]
-        self._audit("appointment_created", "appointments", appointment["id"], f"Cita {ticket} registrada")
+        self._audit("appointment_created", "citas", appointment["id"], f"Cita {ticket} registrada")
         result = self.get_appointment(int(appointment["id"]))
         if result is None:
             raise RuntimeError("No se pudo recuperar la cita creada.")
         return result
 
-    def mark_paid(self, appointment_id: int) -> Dict[str, Any]:
-        appointment = self.get_appointment(appointment_id)
+    def mark_paid(self, id_cita: int) -> Dict[str, Any]:
+        appointment = self.get_appointment(id_cita)
         if not appointment:
             raise ValueError("Cita no encontrada.")
-        if appointment["payment_status"] == "paid":
+        if appointment["estado_pago"] == "paid":
             return appointment
 
         specialty = appointment["specialty"]
         paid_count = len(
             [
                 item
-                for item in self.list_appointments()
-                if item["specialty_id"] == appointment["specialty_id"]
-                and item["payment_status"] == "paid"
+                for item in self.list_citas()
+                if item["id_especialidad"] == appointment["id_especialidad"]
+                and item["estado_pago"] == "paid"
             ]
         )
-        scheduled_at = local_now() + timedelta(minutes=(paid_count + 1) * int(specialty["duration_min"]))
-        receipt_code = f"B{datetime.now().strftime('%Y%m%d%H%M')}-{appointment_id:04d}"
+        fecha_programada = local_now() + timedelta(minutes=(paid_count + 1) * int(specialty["duracion_min"]))
+        codigo_recibo = f"B{datetime.now().strftime('%Y%m%d%H%M')}-{id_cita:04d}"
         self._patch(
-            "appointments",
-            {"id": f"eq.{appointment_id}"},
+            "citas",
+            {"id": f"eq.{id_cita}"},
             {
-                "status": "paid",
-                "payment_status": "paid",
-                "triage_status": "waiting",
-                "consultation_status": "not_started",
-                "pharmacy_status": "none",
-                "room": specialty["room"],
-                "scheduled_at": scheduled_at.isoformat(timespec="minutes"),
-                "receipt_code": receipt_code,
-                "paid_at": utc_now(),
+                "estado": "paid",
+                "estado_pago": "paid",
+                "estado_triaje": "waiting",
+                "estado_consulta": "not_started",
+                "estado_farmacia": "none",
+                "consultorio": specialty["consultorio"],
+                "fecha_programada": fecha_programada.isoformat(timespec="minutes"),
+                "codigo_recibo": codigo_recibo,
+                "fecha_pago": utc_now(),
             },
         )
-        self._audit("payment_registered", "appointments", appointment_id, f"Pago {receipt_code} confirmado")
-        return self.get_appointment(appointment_id) or appointment
+        self._audit("payment_registered", "citas", id_cita, f"Pago {codigo_recibo} confirmado")
+        return self.get_appointment(id_cita) or appointment
 
-    def set_active_triage(self, appointment_id: int) -> Dict[str, Any]:
-        appointment = self.get_appointment(appointment_id)
+    def set_activo_triedad(self, id_cita: int) -> Dict[str, Any]:
+        appointment = self.get_appointment(id_cita)
         if not appointment:
             raise ValueError("Cita no encontrada.")
-        if appointment["payment_status"] != "paid":
+        if appointment["estado_pago"] != "paid":
             raise ValueError("La cita debe estar pagada antes de triaje.")
-        if appointment["triage_status"] == "done":
+        if appointment["estado_triaje"] == "done":
             raise ValueError("El triaje ya fue registrado.")
         self._patch(
-            "appointments",
-            {"id": f"eq.{appointment_id}"},
-            {"status": "in_triage", "triage_status": "in_progress"},
+            "citas",
+            {"id": f"eq.{id_cita}"},
+            {"estado": "in_triedad", "estado_triaje": "in_progress"},
         )
-        self.set_setting("active_triage_appointment_id", str(appointment_id))
-        self._audit("triage_started", "appointments", appointment_id, "Paciente activado para captura IoT")
-        return self.get_appointment(appointment_id) or appointment
+        self.set_setting("activo_triedad_id_cita", str(id_cita))
+        self._audit("triedad_started", "citas", id_cita, "Paciente activado para captura IoT")
+        return self.get_appointment(id_cita) or appointment
 
-    def capture_triage(
+    def capture_triedad(
         self,
-        appointment_id: int,
+        id_cita: int,
         vitals: Dict[str, Any],
         analysis: Dict[str, Any],
-        source: str,
+        fuente: str,
     ) -> Dict[str, Any]:
         existing = self._select(
-            "triage_records",
-            {"select": "*", "appointment_id": f"eq.{appointment_id}", "limit": "1"},
+            "expedientes",
+            {"select": "*", "id_cita": f"eq.{id_cita}", "limit": "1"},
         )
         payload = {
-            "appointment_id": appointment_id,
-            "temperature": float(vitals["temperature"]),
-            "heart_rate": int(vitals["heart_rate"]),
+            "id_cita": id_cita,
+            "temperatura": float(vitals["temperatura"]),
+            "ritmo_cardiaco": int(vitals["ritmo_cardiaco"]),
             "spo2": int(vitals["spO2"]),
-            "systolic": int(vitals["blood_pressure_systolic"]),
-            "diastolic": int(vitals["blood_pressure_diastolic"]),
-            "weight": float(vitals["weight"]),
-            "height": float(vitals["height"]),
-            "bmi": float(analysis["bmi"]),
-            "priority": analysis["priority"],
-            "risk_score": float(analysis["risk_probability"]),
-            "risk_label": analysis["risk_label"],
-            "predicted_systolic": float(analysis["predicted_systolic"]),
-            "estimated_attention_minutes": float(analysis["estimated_attention_minutes"]),
-            "decision_summary": analysis["decision_summary"],
-            "analysis_json": json.dumps(analysis),
-            "source": source,
-            "captured_at": utc_now(),
+            "sistolica": int(vitals["blood_pressure_sistolica"]),
+            "diastolica": int(vitals["blood_pressure_diastolica"]),
+            "peso": float(vitals["peso"]),
+            "altura": float(vitals["altura"]),
+            "imc": float(analysis["imc"]),
+            "prioridad": analysis["prioridad"],
+            "puntuacion_riesgo": float(analysis["risk_probability"]),
+            "etiqueta_riesgo": analysis["etiqueta_riesgo"],
+            "sistolica_predicha": float(analysis["sistolica_predicha"]),
+            "minutos_estimados": float(analysis["minutos_estimados"]),
+            "resumen_decision": analysis["resumen_decision"],
+            "analisis_json": json.dumps(analysis),
+            "fuente": fuente,
+            "fecha_captura": utc_now(),
         }
         if existing:
-            self._patch("triage_records", {"id": f"eq.{existing[0]['id']}"}, payload)
+            self._patch("expedientes", {"id": f"eq.{existing[0]['id']}"}, payload)
         else:
-            self._insert("triage_records", payload)
+            self._insert("expedientes", payload)
         self._patch(
-            "appointments",
-            {"id": f"eq.{appointment_id}"},
-            {"status": "triaged", "triage_status": "done", "consultation_status": "waiting"},
+            "citas",
+            {"id": f"eq.{id_cita}"},
+            {"estado": "triedadd", "estado_triaje": "done", "estado_consulta": "waiting"},
         )
-        if self.get_setting("active_triage_appointment_id") == str(appointment_id):
-            self.set_setting("active_triage_appointment_id", None)
-        self._audit("triage_captured", "triage_records", appointment_id, f"Triaje {analysis['priority']} registrado")
-        return self.get_appointment(appointment_id) or {}
+        if self.get_setting("activo_triedad_id_cita") == str(id_cita):
+            self.set_setting("activo_triedad_id_cita", None)
+        self._audit("triedad_captured", "expedientes", id_cita, f"Triaje {analysis['prioridad']} registrado")
+        return self.get_appointment(id_cita) or {}
 
-    def create_consultation(self, appointment_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
-        appointment = self.get_appointment(appointment_id)
+    def create_consultation(self, id_cita: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+        appointment = self.get_appointment(id_cita)
         if not appointment:
             raise ValueError("Cita no encontrada.")
-        diagnosis = str(payload.get("diagnosis") or "").strip()
-        if not diagnosis:
+        diagnostico = str(payload.get("diagnostico") or "").strip()
+        if not diagnostico:
             raise ValueError("El diagnostico es obligatorio.")
 
         consultation_payload = {
-            "appointment_id": appointment_id,
-            "doctor_name": str(payload.get("doctor_name") or appointment["specialty"].get("doctor_name") or ""),
-            "symptoms": str(payload.get("symptoms") or ""),
-            "diagnosis": diagnosis,
-            "treatment_notes": str(payload.get("treatment_notes") or ""),
-            "notes": str(payload.get("notes") or ""),
+            "id_cita": id_cita,
+            "nombre_medico": str(payload.get("nombre_medico") or appointment["specialty"].get("nombre_medico") or ""),
+            "sintomas": str(payload.get("sintomas") or ""),
+            "diagnostico": diagnostico,
+            "tratamiento_notas": str(payload.get("tratamiento_notas") or ""),
+            "notas": str(payload.get("notas") or ""),
         }
         existing = self._select(
-            "consultations",
-            {"select": "*", "appointment_id": f"eq.{appointment_id}", "limit": "1"},
+            "consultas",
+            {"select": "*", "id_cita": f"eq.{id_cita}", "limit": "1"},
         )
         if existing:
             consultation = self._patch(
-                "consultations", {"id": f"eq.{existing[0]['id']}"}, consultation_payload
+                "consultas", {"id": f"eq.{existing[0]['id']}"}, consultation_payload
             )[0]
         else:
             consultation = self._insert(
-                "consultations", {**consultation_payload, "created_at": utc_now()}
+                "consultas", {**consultation_payload, "fecha_creacion": utc_now()}
             )[0]
 
         old_pending = self._select(
-            "prescriptions",
+            "recetas",
             {
                 "select": "*",
-                "appointment_id": f"eq.{appointment_id}",
-                "status": "neq.dispensed",
+                "id_cita": f"eq.{id_cita}",
+                "estado": "neq.dispensed",
             },
         )
         for item in old_pending:
-            self._delete("prescriptions", {"id": f"eq.{item['id']}"})
+            self._delete("recetas", {"id": f"eq.{item['id']}"})
 
-        prescription_items = [
-            item for item in payload.get("prescription_items") or [] if item.get("medicine")
+        receta_items = [
+            item for item in payload.get("receta_items") or [] if item.get("medicamento")
         ]
-        prescription_id = None
-        if prescription_items:
+        id_receta = None
+        if receta_items:
             total = sum(
-                max(1, int(item.get("quantity") or 1)) * max(0.0, float(item.get("unit_price") or 0))
-                for item in prescription_items
+                max(1, int(item.get("cantidad") or 1)) * max(0.0, float(item.get("unit_precio") or 0))
+                for item in receta_items
             )
             prescription = self._insert(
-                "prescriptions",
+                "recetas",
                 {
-                    "appointment_id": appointment_id,
-                    "consultation_id": consultation["id"],
-                    "status": "pending",
+                    "id_cita": id_cita,
+                    "id_consulta": consultation["id"],
+                    "estado": "pending",
                     "total": total,
-                    "created_at": utc_now(),
+                    "fecha_creacion": utc_now(),
                 },
             )[0]
-            prescription_id = prescription["id"]
-            for item in prescription_items:
+            id_receta = prescription["id"]
+            for item in receta_items:
                 self._insert(
-                    "prescription_items",
+                    "receta_items",
                     {
-                        "prescription_id": prescription_id,
-                        "medicine": str(item.get("medicine") or ""),
-                        "dosage": str(item.get("dosage") or ""),
-                        "frequency": str(item.get("frequency") or ""),
-                        "days": max(1, int(item.get("days") or 1)),
-                        "quantity": max(1, int(item.get("quantity") or 1)),
-                        "unit_price": max(0.0, float(item.get("unit_price") or 0)),
+                        "id_receta": id_receta,
+                        "medicamento": str(item.get("medicamento") or ""),
+                        "dosis": str(item.get("dosis") or ""),
+                        "frecuencia": str(item.get("frecuencia") or ""),
+                        "dias": max(1, int(item.get("dias") or 1)),
+                        "cantidad": max(1, int(item.get("cantidad") or 1)),
+                        "unit_precio": max(0.0, float(item.get("unit_precio") or 0)),
                     },
                 )
 
         self._patch(
-            "appointments",
-            {"id": f"eq.{appointment_id}"},
+            "citas",
+            {"id": f"eq.{id_cita}"},
             {
-                "status": "prescription_pending" if prescription_id else "completed",
-                "consultation_status": "done",
-                "pharmacy_status": "pending" if prescription_id else "none",
+                "estado": "prescription_pending" if id_receta else "completed",
+                "estado_consulta": "done",
+                "estado_farmacia": "pending" if id_receta else "none",
             },
         )
-        self._audit("consultation_saved", "consultations", consultation["id"], "Consulta medica registrada")
-        return self.get_appointment(appointment_id) or appointment
+        self._audit("consultation_saved", "consultas", consultation["id"], "Consulta medica registrada")
+        return self.get_appointment(id_cita) or appointment
 
-    def dispense_prescription(self, prescription_id: int) -> Dict[str, Any]:
+    def dispense_prescription(self, id_receta: int) -> Dict[str, Any]:
         prescription = self._select(
-            "prescriptions", {"select": "*", "id": f"eq.{prescription_id}", "limit": "1"}
+            "recetas", {"select": "*", "id": f"eq.{id_receta}", "limit": "1"}
         )
         if not prescription:
             raise ValueError("Receta no encontrada.")
         row = prescription[0]
         self._patch(
-            "prescriptions",
-            {"id": f"eq.{prescription_id}"},
-            {"status": "dispensed", "dispensed_at": utc_now()},
+            "recetas",
+            {"id": f"eq.{id_receta}"},
+            {"estado": "dispensed", "fecha_dispensacion": utc_now()},
         )
         self._patch(
-            "appointments",
-            {"id": f"eq.{row['appointment_id']}"},
-            {"status": "completed", "pharmacy_status": "dispensed"},
+            "citas",
+            {"id": f"eq.{row['id_cita']}"},
+            {"estado": "completed", "estado_farmacia": "dispensed"},
         )
-        self._audit("prescription_dispensed", "prescriptions", prescription_id, "Medicamentos entregados")
-        return next(item for item in self.list_prescriptions() if int(item["id"]) == int(prescription_id))
+        self._audit("prescription_dispensed", "recetas", id_receta, "Medicamentos entregados")
+        return next(item for item in self.list_recetas() if int(item["id"]) == int(id_receta))
 
-    def list_prescriptions(self) -> List[Dict[str, Any]]:
-        prescriptions = self._select("prescriptions", {"select": "*", "order": "id.desc"})
-        items = self._select("prescription_items", {"select": "*", "order": "id.asc"})
-        appointments = {item["id"]: item for item in self.list_appointments()}
+    def list_recetas(self) -> List[Dict[str, Any]]:
+        recetas = self._select("recetas", {"select": "*", "order": "id.desc"})
+        items = self._select("receta_items", {"select": "*", "order": "id.asc"})
+        citas = {item["id"]: item for item in self.list_citas()}
         by_prescription: Dict[int, List[Dict[str, Any]]] = {}
         for item in items:
-            by_prescription.setdefault(int(item["prescription_id"]), []).append(item)
+            by_prescription.setdefault(int(item["id_receta"]), []).append(item)
         results = []
-        for prescription in prescriptions:
-            appointment = appointments.get(prescription["appointment_id"], {})
+        for prescription in recetas:
+            appointment = citas.get(prescription["id_cita"], {})
             patient = appointment.get("patient", {})
             specialty = appointment.get("specialty", {})
             row = {
                 **prescription,
                 "ticket": appointment.get("ticket"),
-                "patient_name": patient.get("full_name"),
-                "patient_document": patient.get("document"),
-                "specialty_name": specialty.get("name"),
-                "room": appointment.get("room"),
-                "diagnosis": (appointment.get("consultation") or {}).get("diagnosis"),
+                "nombre_paciente": patient.get("nombre_completo"),
+                "documento_paciente": patient.get("documento"),
+                "especialidad_nombre": specialty.get("nombre"),
+                "consultorio": appointment.get("consultorio"),
+                "diagnostico": (appointment.get("consultation") or {}).get("diagnostico"),
                 "items": by_prescription.get(int(prescription["id"]), []),
             }
             results.append(row)
         return results
 
-    def get_setting(self, key: str) -> Optional[str]:
-        rows = self._select("settings", {"select": "*", "key": f"eq.{key}", "limit": "1"})
-        return rows[0]["value"] if rows else None
+    def get_setting(self, clave: str) -> Optional[str]:
+        rows = self._select("configuracion", {"select": "*", "clave": f"eq.{clave}", "limit": "1"})
+        return rows[0]["valor"] if rows else None
 
-    def set_setting(self, key: str, value: Optional[str]) -> None:
-        if value is None:
-            self._delete("settings", {"key": f"eq.{key}"})
-        elif self.get_setting(key) is None:
-            self._insert("settings", {"key": key, "value": value})
+    def set_setting(self, clave: str, valor: Optional[str]) -> None:
+        if valor is None:
+            self._delete("configuracion", {"clave": f"eq.{clave}"})
+        elif self.get_setting(clave) is None:
+            self._insert("configuracion", {"clave": clave, "valor": valor})
         else:
-            self._patch("settings", {"key": f"eq.{key}"}, {"value": value})
+            self._patch("configuracion", {"clave": f"eq.{clave}"}, {"valor": valor})
 
     def _request(
         self,
@@ -2474,8 +2544,8 @@ class SupabaseRepository(BaseRepository):
         prefer: Optional[str] = None,
     ) -> Any:
         headers = {
-            "apikey": self.key,
-            "Authorization": f"Bearer {self.key}",
+            "apiclave": self.clave,
+            "Authorization": f"Bearer {self.clave}",
             "Content-Type": "application/json",
         }
         if prefer:
@@ -2488,8 +2558,8 @@ class SupabaseRepository(BaseRepository):
             headers=headers,
             timeout=20,
         )
-        if response.status_code >= 400:
-            raise RuntimeError(f"Supabase {table}: {response.status_code} {response.text}")
+        if response.estado_code >= 400:
+            raise RuntimeError(f"Supabase {table}: {response.estado_code} {response.text}")
         if response.text:
             return response.json()
         return []
@@ -2509,145 +2579,145 @@ class SupabaseRepository(BaseRepository):
         return self._request("DELETE", table, params=params, prefer="return=representation")
 
     def _next_ticket(self) -> str:
-        rows = self._select("appointments", {"select": "id", "order": "id.desc", "limit": "1"})
+        rows = self._select("citas", {"select": "id", "order": "id.desc", "limit": "1"})
         next_id = int(rows[0]["id"]) + 1 if rows else 1
         return f"A{next_id:04d}"
 
-    def _audit(self, event_type: str, entity: str, entity_id: Optional[int], message: str) -> None:
+    def _audit(self, tipo_evento: str, entidad: str, entidad_id: Optional[int], mensaje: str) -> None:
         self._insert(
-            "audit_events",
+            "eventos_auditoria",
             {
-                "event_type": event_type,
-                "entity": entity,
-                "entity_id": entity_id,
-                "message": message,
-                "created_at": utc_now(),
+                "tipo_evento": tipo_evento,
+                "entidad": entidad,
+                "entidad_id": entidad_id,
+                "mensaje": mensaje,
+                "fecha_creacion": utc_now(),
             },
         )
     
         # ============== CRUD for Workers ==============
-    def list_workers(self):
+    def list_trabajadores(self):
         conn = self._connect()
-        rows = conn.execute('SELECT * FROM workers WHERE active = 1 ORDER BY id').fetchall()
+        rows = conn.execute('SELECT * FROM trabajadores WHERE activo = 1 ORDER BY id').fetchall()
         return [dict(row) for row in rows]
 
     def create_worker(self, payload):
         conn = self._connect()
         data = {
-            'document': payload.get('document'),
-            'first_name': payload.get('first_name'),
-            'last_name': payload.get('last_name'),
-            'role': payload.get('role'),
+            'documento': payload.get('documento'),
+            'nombre': payload.get('nombre'),
+            'apellido': payload.get('apellido'),
+            'rol': payload.get('rol'),
             'specialty': payload.get('specialty'),
-            'phone': payload.get('phone'),
-            'active': 1,
-            'created_at': utc_now()
+            'telefono': payload.get('telefono'),
+            'activo': 1,
+            'fecha_creacion': utc_now()
         }
-        conn.execute('''INSERT INTO workers (document, first_name, last_name, role, specialty, phone, active, created_at)
-            VALUES (:document, :first_name, :last_name, :role, :specialty, :phone, :active, :created_at)''', data)
+        conn.execute('''INSERT INTO trabajadores (documento, nombre, apellido, rol, specialty, telefono, activo, fecha_creacion)
+            VALUES (:documento, :nombre, :apellido, :rol, :specialty, :telefono, :activo, :fecha_creacion)''', data)
         conn.commit()
         return self.get_worker(conn.lastrowid)
 
     def get_worker(self, worker_id):
         conn = self._connect()
-        row = conn.execute('SELECT * FROM workers WHERE id = ?', (worker_id,)).fetchone()
+        row = conn.execute('SELECT * FROM trabajadores WHERE id = ?', (worker_id,)).fetchone()
         return dict(row) if row else None
 
     def update_worker(self, worker_id, payload):
         conn = self._connect()
-        conn.execute('''UPDATE workers SET document=:document, first_name=:first_name, last_name=:last_name, 
-            role=:role, specialty=:specialty, phone=:phone WHERE id=:id''', {**payload, 'id': worker_id})
+        conn.execute('''UPDATE trabajadores SET documento=:documento, nombre=:nombre, apellido=:apellido, 
+            rol=:rol, specialty=:specialty, telefono=:telefono WHERE id=:id''', {**payload, 'id': worker_id})
         conn.commit()
         return self.get_worker(worker_id)
 
     def delete_worker(self, worker_id):
         conn = self._connect()
-        conn.execute('UPDATE workers SET active = 0 WHERE id = ?', (worker_id,))
+        conn.execute('UPDATE trabajadores SET activo = 0 WHERE id = ?', (worker_id,))
         conn.commit()
 
     # ============== CRUD for Consultorios ==============
     def list_consultorios(self):
         conn = self._connect()
-        rows = conn.execute('SELECT * FROM consultorios WHERE active = 1 ORDER BY id').fetchall()
+        rows = conn.execute('SELECT * FROM consultorios WHERE activo = 1 ORDER BY id').fetchall()
         return [dict(row) for row in rows]
 
     def create_consultorio(self, payload):
         conn = self._connect()
-        data = {'name': payload.get('name'), 'floor': payload.get('floor'), 'equipment': payload.get('equipment'), 
-               'active': 1, 'created_at': utc_now()}
-        conn.execute('INSERT INTO consultorios (name, floor, equipment, active, created_at) VALUES (:name, :floor, :equipment, :active, :created_at)', data)
+        data = {'nombre': payload.get('nombre'), 'floor': payload.get('floor'), 'equipment': payload.get('equipment'), 
+               'activo': 1, 'fecha_creacion': utc_now()}
+        conn.execute('INSERT INTO consultorios (nombre, floor, equipment, activo, fecha_creacion) VALUES (:nombre, :floor, :equipment, :activo, :fecha_creacion)', data)
         conn.commit()
         return dict(conn.execute('SELECT * FROM consultorios WHERE id = ?', (conn.lastrowid,)).fetchone())
 
     def delete_consultorio(self, consultorio_id):
         conn = self._connect()
-        conn.execute('UPDATE consultorios SET active = 0 WHERE id = ?', (consultorio_id,))
+        conn.execute('UPDATE consultorios SET activo = 0 WHERE id = ?', (consultorio_id,))
         conn.commit()
 
     # ============== CRUD for Medications ==============
-    def list_medications(self):
+    def list_medicamentos(self):
         conn = self._connect()
-        rows = conn.execute('SELECT * FROM medications WHERE active = 1 ORDER BY name').fetchall()
+        rows = conn.execute('SELECT * FROM medicamentos WHERE activo = 1 ORDER BY nombre').fetchall()
         return [dict(row) for row in rows]
 
     def create_medication(self, payload):
         conn = self._connect()
-        data = {'name': payload.get('name'), 'description': payload.get('description'), 
-               'price': payload.get('price', 0), 'stock': payload.get('stock', 0), 
-               'active': 1, 'created_at': utc_now()}
-        conn.execute('INSERT INTO medications (name, description, price, stock, active, created_at) VALUES (:name, :description, :price, :stock, :active, :created_at)', data)
+        data = {'nombre': payload.get('nombre'), 'description': payload.get('description'), 
+               'precio': payload.get('precio', 0), 'stock': payload.get('stock', 0), 
+               'activo': 1, 'fecha_creacion': utc_now()}
+        conn.execute('INSERT INTO medicamentos (nombre, description, precio, stock, activo, fecha_creacion) VALUES (:nombre, :description, :precio, :stock, :activo, :fecha_creacion)', data)
         conn.commit()
-        return dict(conn.execute('SELECT * FROM medications WHERE id = ?', (conn.lastrowid,)).fetchone())
+        return dict(conn.execute('SELECT * FROM medicamentos WHERE id = ?', (conn.lastrowid,)).fetchone())
 
     def update_medication(self, medication_id, payload):
         conn = self._connect()
-        conn.execute('''UPDATE medications SET name=:name, description=:description, price=:price, stock=:stock WHERE id=:id''', 
+        conn.execute('''UPDATE medicamentos SET nombre=:nombre, description=:description, precio=:precio, stock=:stock WHERE id=:id''', 
             {**payload, 'id': medication_id})
         conn.commit()
-        return dict(conn.execute('SELECT * FROM medications WHERE id = ?', (medication_id,)).fetchone())
+        return dict(conn.execute('SELECT * FROM medicamentos WHERE id = ?', (medication_id,)).fetchone())
 
     def delete_medication(self, medication_id):
         conn = self._connect()
-        conn.execute('UPDATE medications SET active = 0 WHERE id = ?', (medication_id,))
+        conn.execute('UPDATE medicamentos SET activo = 0 WHERE id = ?', (medication_id,))
         conn.commit()
 
     # ============== Search Patients ==============
-    def search_patients(self, query):
+    def search_pacientes(self, query):
         conn = self._connect()
-        rows = conn.execute('''SELECT * FROM patients WHERE document LIKE ? OR first_name LIKE ? OR last_name LIKE ? LIMIT 20''',
+        rows = conn.execute('''SELECT * FROM pacientes WHERE documento LIKE ? OR nombre LIKE ? OR apellido LIKE ? LIMIT 20''',
             (f'%{query}%', f'%{query}%', f'%{query}%')).fetchall()
         return [dict(row) for row in rows]
     
-    def get_patient(self, patient_id):
+    def get_patient(self, id_paciente):
         conn = self._connect()
-        row = conn.execute('SELECT * FROM patients WHERE id = ?', (patient_id,)).fetchone()
+        row = conn.execute('SELECT * FROM pacientes WHERE id = ?', (id_paciente,)).fetchone()
         return dict(row) if row else None
 
-    def update_patient(self, patient_id, payload):
+    def update_patient(self, id_paciente, payload):
         conn = self._connect()
-        conn.execute("UPDATE patients SET document=:document, first_name=:first_name, last_name=:last_name, age=:age, sex=:sex, phone=:phone WHERE id=:id", 
-            {**payload, 'id': patient_id})
+        conn.execute("UPDATE pacientes SET documento=:documento, nombre=:nombre, apellido=:apellido, edad=:edad, sexo=:sexo, telefono=:telefono WHERE id=:id", 
+            {**payload, 'id': id_paciente})
         conn.commit()
-        return self.get_patient(patient_id)
+        return self.get_patient(id_paciente)
 
-    def delete_patient(self, patient_id):
+    def delete_patient(self, id_paciente):
         conn = self._connect()
-        conn.execute('DELETE FROM patients WHERE id = ?', (patient_id,))
+        conn.execute('DELETE FROM pacientes WHERE id = ?', (id_paciente,))
         conn.commit()
 
 
 
     @staticmethod
-    def _stats(appointments: Sequence[Dict[str, Any]], prescriptions: Sequence[Dict[str, Any]]) -> Dict[str, int]:
+    def _stats(citas: Sequence[Dict[str, Any]], recetas: Sequence[Dict[str, Any]]) -> Dict[str, int]:
         return {
-            "registered": len(appointments),
-            "pending_payment": len([item for item in appointments if item["payment_status"] == "pending"]),
-            "waiting_triage": len([item for item in appointments if item["triage_status"] in {"waiting", "in_progress"}]),
-            "waiting_consultation": len([item for item in appointments if item["consultation_status"] == "waiting"]),
-            "pending_pharmacy": len([item for item in prescriptions if item["status"] == "pending"]),
-            "completed": len([item for item in appointments if item["status"] == "completed"]),
+            "registered": len(citas),
+            "pending_payment": len([item for item in citas if item["estado_pago"] == "pending"]),
+            "waiting_triedad": len([item for item in citas if item["estado_triaje"] in {"waiting", "in_progress"}]),
+            "waiting_consultation": len([item for item in citas if item["estado_consulta"] == "waiting"]),
+            "pending_pharmacy": len([item for item in recetas if item["estado"] == "pending"]),
+            "completed": len([item for item in citas if item["estado"] == "completed"]),
         }
 
     @staticmethod
-    def _triage_dict(row: Dict[str, Any]) -> Dict[str, Any]:
-        return {**row, "analysis": json.loads(row.get("analysis_json") or "{}")}
+    def _triedad_dict(row: Dict[str, Any]) -> Dict[str, Any]:
+        return {**row, "analysis": json.loads(row.get("analisis_json") or "{}")}

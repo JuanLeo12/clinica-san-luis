@@ -30,6 +30,81 @@ ml_engine = ClinicalML()
 CONSULTADNI_TOKEN = os.getenv("CONSULTADNI_TOKEN", "")
 
 
+def _transform_patient(p):
+    """Transform Spanish patient fields to English for frontend"""
+    first_name = p.get("nombre", "")
+    last_name = p.get("apellido", "")
+    return {
+        "id": p.get("id"),
+        "document": p.get("documento"),
+        "first_name": first_name,
+        "last_name": last_name,
+        "full_name": f"{first_name} {last_name}".strip(),
+        "age": p.get("edad"),
+        "sex": p.get("sexo"),
+        "phone": p.get("telefono"),
+        "birth_date": p.get("fecha_nacimiento"),
+        "peso": p.get("peso"),
+        "altura": p.get("altura"),
+        "active": p.get("activo"),
+    }
+
+
+def _translate_status(status: str, status_type: str) -> str:
+    """Translate status values from database to what frontend expects"""
+    # Spanish to English translations
+    es_to_en = {
+        "pendiente": "pending",
+        "pagado": "paid",
+        "no_iniciado": "not_started",
+        "esperando": "waiting",
+        "finalizado": "completed",
+        "no_entregado": "not_started",
+        "entregado": "completed",
+    }
+    # Database demo values to frontend expected values
+    db_to_frontend = {
+        "registered": "pending",
+        "triedadd": "in_progress",
+        "done": "completed",
+        "none": "not_started",
+    }
+    # Prescription status values (both Spanish and English)
+    prescription_map = {
+        "pendiente": "pending",
+        "dispensado": "dispensed",
+        "prescription_pending": "pending",
+        "dispensed": "dispensed",
+        "pending": "pending",
+        "completed": "completed",
+    }
+
+    # Handle prescription status specifically
+    if status_type == "prescription":
+        return prescription_map.get(status, status)
+
+    # First try Spanish to English
+    if status in es_to_en:
+        return es_to_en[status]
+    # Then try database demo to frontend expected
+    if status in db_to_frontend:
+        return db_to_frontend[status]
+    return status
+
+
+def _transform_workers(workers):
+    """Transform Spanish worker fields to English"""
+    return [{
+        "id": w.get("id"),
+        "document": w.get("documento"),
+        "first_name": w.get("nombre"),
+        "last_name": w.get("apellido"),
+        "role": w.get("rol"),
+        "specialty": w.get("especialidad"),
+        "phone": w.get("telefono"),
+        "active": w.get("activo"),
+    } for w in workers]
+
 
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="public/static", static_url_path="/static")
@@ -53,20 +128,220 @@ def create_app() -> Flask:
     def render_login():
         return render_template("login.html")
 
+    @app.route("/triage_dataset.csv")
+    def serve_dataset_csv():
+        import os
+        csv_path = os.path.join(os.path.dirname(__file__), "triage_dataset.csv")
+        from flask import send_file
+        return send_file(csv_path, mimetype="text/csv")
+
     @app.route("/api/ping", methods=["GET"])
     def ping():
         return jsonify({"status": "ok"}), 200
 
     @app.route("/api/state", methods=["GET"])
     def state():
+        repo = app.config["repo"]
         snapshot = repo.snapshot()
         snapshot["latest_iot"] = latest_iot_data
         snapshot["storage"] = os.getenv("APP_STORAGE", "sqlite")
+        # Transform Spanish fields to English for frontend
+        patients = [_transform_patient(p) for p in snapshot.get("pacientes", [])]
+        workers = _transform_workers(snapshot.get("trabajadores", []))
+        # Create lookups for adding to appointments
+        patient_map = {p["id"]: p for p in patients}
+        # Transform specialties too
+        specialties = snapshot.get("especialidades", [])
+        specialty_map = {s["id"]: s for s in specialties}
+        # Get triaje/expediente data
+        expediente_data = snapshot.get("expedientes", [])
+        expediente_map = {e.get("id_cita"): e for e in expediente_data}
+        # Get consultation data
+        consulta_data = snapshot.get("consultas", [])
+        consulta_map = {c.get("id_cita"): c for c in consulta_data}
+        snapshot["patients"] = patients
+        snapshot["workers"] = workers
+        # Add derived fields to appointments (patient, specialty, etc.)
+        appointments = []
+        for apt in snapshot.get("citas", []):
+            # Add patient object
+            patient = patient_map.get(apt.get("id_paciente"))
+            if patient:
+                apt["patient"] = {
+                    "id": patient["id"],
+                    "document": patient["document"],
+                    "full_name": f"{patient['first_name']} {patient['last_name']}",
+                    "first_name": patient["first_name"],
+                    "last_name": patient["last_name"],
+                    "age": patient["age"],
+                    "sex": patient["sex"],
+                    "phone": patient["phone"],
+                }
+            # Add specialty object
+            specialty = specialty_map.get(apt.get("id_especialidad"))
+            if specialty:
+                apt["specialty"] = {
+                    "id": specialty["id"],
+                    "name": specialty.get("nombre", ""),
+                    "price": specialty.get("precio", 0),
+                    "duration_minutes": specialty.get("duracion_minutos", 30),
+                }
+            # Add English aliases for status fields (frontend expects these)
+            apt["status"] = _translate_status(apt.get("estado", ""), "general")
+            apt["payment_status"] = _translate_status(apt.get("estado_pago", ""), "payment")
+            apt["triage_status"] = _translate_status(apt.get("estado_triaje", ""), "triage")
+            apt["consultation_status"] = _translate_status(apt.get("estado_consulta", ""), "consultation")
+            apt["pharmacy_status"] = _translate_status(apt.get("estado_farmacia", ""), "pharmacy")
+            apt["room"] = apt.get("consultorio", "")
+            # Add creation date for timeline display
+            apt["created_at"] = apt.get("fecha_creacion", "")
+            # Add triaje data (expediente) if available
+            exp = expediente_map.get(apt.get("id"))
+            if exp:
+                peso = exp.get("peso", 0)
+                altura = exp.get("altura", 0)
+                # Calcular IMC (BMI en inglés) = peso(kg) / altura(m)^2
+                imc = 0
+                if peso and altura and altura > 0:
+                    imc = round(peso / ((altura / 100) ** 2), 1)
+                apt["triage"] = {
+                    "priority": exp.get("prioridad", "Rutina"),
+                    "risk_score": exp.get("puntuacion_riesgo", 0),
+                    "risk_label": exp.get("etiqueta_riesgo", "Bajo"),
+                    "estimated_attention_minutes": exp.get("minutos_estimados", 15),
+                    "heart_rate": exp.get("ritmo_cardiaco"),
+                    "spo2": exp.get("spo2"),
+                    "systolic": exp.get("sistolica"),
+                    "diastolic": exp.get("diastolica"),
+                    "temperature": exp.get("temperatura"),
+                    "weight": peso,
+                    "height": altura,
+                    "bmi": imc,
+                }
+            # Add consultation data if available
+            cons = consulta_map.get(apt.get("id"))
+            if cons:
+                apt["consultation"] = {
+                    "symptoms": cons.get("sintomas", ""),
+                    "diagnosis": cons.get("diagnostico", ""),
+                    "treatment": cons.get("tratamiento", ""),
+                    "notes": cons.get("notas", ""),
+                    "doctor_name": cons.get("nombre_medico", ""),
+                }
+            appointments.append(apt)
+        # Keep Spanish keys too for reference
+        snapshot["specialties"] = specialties
+        # Add English aliases for specialties
+        for s in specialties:
+            s["name"] = s.get("nombre", "")
+            s["price"] = s.get("precio", 0)
+            s["room"] = s.get("consultorio", "")
+            s["duration_minutes"] = s.get("duracion_minutos", 30)
+        snapshot["appointments"] = appointments
+        # Add English aliases for consultations
+        consultas = snapshot.get("consultas", [])
+        for c in consultas:
+            c["symptoms"] = c.get("sintomas", "")
+            c["diagnosis"] = c.get("diagnostico", "")
+            c["treatment"] = c.get("tratamiento", "")
+            c["notes"] = c.get("notas", "")
+            c["doctor_name"] = c.get("nombre_medico", "")
+        snapshot["consultations"] = consultas
+        # Add English aliases for prescriptions
+        recetas = snapshot.get("recetas", [])
+        # Create lookup for appointments
+        cita_map = {c.get("id"): c for c in snapshot.get("citas", [])}
+        # Create lookup for consultations (diagnosis)
+        consulta_map = {c.get("id_cita"): c for c in snapshot.get("consultas", [])}
+        for r in recetas:
+            # Ensure id is preserved
+            r["id"] = r.get("id")
+            # Translate status values: prescription_pending -> pending, dispensed -> dispensed
+            raw_status = r.get("estado", "")
+            r["status"] = _translate_status(raw_status, "prescription")
+            r["total"] = r.get("total", 0)
+            # Link to patient and appointment data
+            id_cita = r.get("id_cita")
+            cita = cita_map.get(id_cita)
+            if cita:
+                # Get ticket from appointment
+                r["ticket"] = cita.get("ticket", "")
+                r["appointment_id"] = id_cita
+                # Get patient data
+                id_paciente = cita.get("id_paciente")
+                paciente = next((p for p in snapshot.get("pacientes", []) if p.get("id") == id_paciente), None)
+                if paciente:
+                    r["patient_name"] = f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip()
+                    r["patient_document"] = paciente.get("documento", "")
+                # Get diagnosis from consultation
+                consulta = consulta_map.get(id_cita)
+                if consulta:
+                    r["diagnosis"] = consulta.get("diagnostico", "")
+            else:
+                r["ticket"] = ""
+                r["appointment_id"] = id_cita
+                r["diagnosis"] = ""
+            # Add items to prescription
+            items = [dict(i) for i in snapshot.get("receta_items", []) if i.get("id_receta") == r.get("id")]
+            for item in items:
+                item["medicine"] = item.get("medicina", "") or item.get("medicamento", "")
+                item["dosage"] = item.get("dosis", "")
+                item["frequency"] = item.get("frecuencia", "")
+                item["days"] = item.get("dias", 0)
+                item["quantity"] = item.get("cantidad", 0)
+                item["unit_price"] = item.get("precio_unitario", 0) or item.get("unit_precio", 0)
+            r["items"] = items
+        snapshot["prescriptions"] = recetas
+        # Add English aliases for transactions
+        transacciones = snapshot.get("transacciones", [])
+        for t in transacciones:
+            t["transaction_code"] = t.get("codigo_transaccion", "")
+            t["concept"] = t.get("concepto", "")
+            t["created_by"] = t.get("creado_por", "")
+            t["patient_document"] = t.get("documento_paciente", "")
+            # Link to patient name
+            doc_paciente = t.get("documento_paciente")
+            if doc_paciente:
+                paciente = next((p for p in snapshot.get("pacientes", []) if p.get("documento") == doc_paciente), None)
+                if paciente:
+                    t["patient_name"] = f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip()
+            t["status"] = _translate_status(t.get("estado", ""), "payment")
+            t["payment_method"] = t.get("metodo_pago", "")
+            t["module"] = t.get("modulo", "")
+            t["amount"] = t.get("monto", 0)
+            t["created_at"] = t.get("fecha_creacion", "")
+        snapshot["transactions"] = transacciones
+        # Add English aliases for rooms and medications
+        consultorios = snapshot.get("consultorios", [])
+        for r in consultorios:
+            r["name"] = r.get("nombre", "")
+            r["active"] = r.get("activo", 1)
+        snapshot["rooms"] = consultorios
+        medicamentos = snapshot.get("medicamentos", [])
+        for m in medicamentos:
+            m["name"] = m.get("nombre", "")
+            m["medicine"] = m.get("nombre", "")
+            m["price"] = m.get("precio", 0)
+            m["unit_price"] = m.get("precio", 0)
+            m["stock"] = m.get("stock", 0)
+            m["description"] = m.get("descripcion", "")
+            m["active"] = m.get("activo", 1)
+        snapshot["medications"] = medicamentos
         return jsonify(snapshot), 200
 
     @app.route("/api/specialties", methods=["GET"])
     def specialties():
-        return jsonify({"specialties": repo.list_specialties()}), 200
+        raw = repo.list_specialties()
+        transformed = []
+        for s in raw:
+            transformed.append({
+                "id": s.get("id"),
+                "name": s.get("nombre", ""),
+                "price": s.get("precio", 0),
+                "room": s.get("consultorio", ""),
+                "duration_minutes": s.get("duracion_minutos", 30),
+            })
+        return jsonify({"specialties": transformed}), 200
 
     @app.route("/api/appointments", methods=["POST"])
     def create_appointment():
@@ -154,6 +429,11 @@ def create_app() -> Flask:
     @app.route("/api/ml/explain", methods=["GET"])
     def explain_ml():
         return jsonify(ml_engine.model_info()), 200
+
+    @app.route("/api/ml/evaluate", methods=["GET"])
+    def evaluate_ml():
+        repo = app.config["repo"]
+        return jsonify(ml_engine.dashboard_metrics(repo.snapshot().get("appointments", []))), 200
 
     @app.route("/api/ml/dashboard", methods=["GET"])
     def ml_dashboard():
@@ -317,7 +597,9 @@ def create_app() -> Flask:
         # Workers API
     @app.route("/api/workers", methods=["GET"])
     def list_workers():
-        return jsonify({"workers": repo.list_workers()}), 200
+        repo = app.config["repo"]
+        workers = repo.list_workers()
+        return jsonify({"workers": _transform_workers(workers)}), 200
 
     @app.route("/api/workers", methods=["POST"])
     def create_worker():
@@ -337,7 +619,12 @@ def create_app() -> Flask:
     # Consultorios API
     @app.route("/api/consultorios", methods=["GET"])
     def list_consultorios():
-        return jsonify({"consultorios": repo.list_consultorios()}), 200
+        rooms = repo.list_consultorios()
+        # Add English aliases
+        for r in rooms:
+            r["name"] = r.get("nombre", "")
+            r["active"] = r.get("activo", 1)
+        return jsonify({"consultorios": rooms}), 200
 
     @app.route("/api/consultorios", methods=["POST"])
     def create_consultorio():
@@ -357,7 +644,14 @@ def create_app() -> Flask:
     # Medications API
     @app.route("/api/medications", methods=["GET"])
     def list_medications():
-        return jsonify({"medications": repo.list_medications()}), 200
+        meds = repo.list_medications()
+        # Add English aliases
+        for m in meds:
+            m["medicine"] = m.get("nombre", "")
+            m["unit_price"] = m.get("precio", 0)
+            m["description"] = m.get("descripcion", "")
+            m["active"] = m.get("activo", 1)
+        return jsonify({"medications": meds}), 200
 
     @app.route("/api/medications", methods=["POST"])
     def create_medication():
@@ -378,12 +672,16 @@ def create_app() -> Flask:
     @app.route("/api/patients/search", methods=["GET"])
     def search_patients():
         query = request.args.get("q", "")
-        return jsonify({"patients": repo.search_patients(query)}), 200
-    
-        # Patients API
+        repo = app.config["repo"]
+        patients = repo.search_patients(query)
+        return jsonify({"patients": [_transform_patient(p) for p in patients]}), 200
+
+    # Patients API
     @app.route("/api/patients", methods=["GET"])
     def list_patients():
-        return jsonify({"patients": repo.list_patients()}), 200
+        repo = app.config["repo"]
+        patients = repo.list_patients()
+        return jsonify({"patients": [_transform_patient(p) for p in patients]}), 200
 
     @app.route("/api/patients", methods=["POST"])
     def create_patient():
