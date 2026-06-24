@@ -1,87 +1,105 @@
-# Sistema web de clinica con triaje IoT
+# Clínica San Luis - Sistema de Gestión
 
-Aplicacion Flask para automatizar el flujo interno de una clinica:
+Sistema web para automatizar el flujo interno de una clínica médica.
 
-- Recepcion: registro del paciente y especialidad.
-- Caja: pago, comprobante, consultorio y horario.
-- Triaje: captura IoT o manual de signos vitales.
-- Consultorio: revision de triaje, diagnostico y receta digital.
-- Farmacia: cobro y entrega de medicamentos.
-- Pantalla: turnos actuales para triaje y consultorio.
-- IA: modelos en Python para apoyar priorizacion.
+## Funcionalidades
 
-## Algoritmos incluidos
+- **Recepción**: Registro de pacientes y selección de especialidad
+- **Caja**: Pago de consulta, emisión de comprobante, asignacion de consultorio y horario
+- **Triaje**: Captura de signos vitales (manual o desde IoT)
+- **Consultorio Médico**: Revision de triaje, diagnostico y receta digital
+- **Farmacia**: Cobro y entrega de medicamentos
+- **Pantalla de Turnos**: Muestra pacientes llamados a triaje y consulta
+- **Admin**: Panel de control con historial de pacientes
 
-El archivo `clinic_ai.py` implementa en Python, sin dependencias externas:
+## Tecnologias
 
-- Machine learning aplicado a signos vitales.
-- Regresion lineal simple para estimar presion sistolica esperada.
-- Regresion lineal multiple para estimar minutos de consulta.
-- Regresion logistica para probabilidad de riesgo clinico.
-- Arbol de decision para prioridad de atencion.
+- **Backend**: Flask (Python)
+- **Base de datos**: SQLite
+- **Frontend**: Vanilla JavaScript
 
-## Ejecutar localmente
+---
+
+## Ejecución rapida
+
+### 1. Clonar repositorio
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate
+git clone https://github.com/JuanLeo12/clinica-san-luis.git
+cd clinica-san-luis
+```
+
+### 2. Instalar dependencias
+
+```bash
 pip install -r requirements.txt
+```
+
+### 3. Ejecutar
+
+```bash
 python app.py
 ```
 
-Abrir `http://localhost:5000`.
+### 4. Acceder
 
-Por defecto lee variables desde `.env` y usa SQLite en `clinic_app.sqlite3`. Para apuntar a otro archivo:
+Abrir en el navegador: `http://localhost:5000`
 
-```bash
-set DATABASE_PATH=clinic_app.sqlite3
-python app.py
-```
+---
 
-## Usar Supabase
+## Configuracion
 
-1. Crear un proyecto en Supabase.
-2. Ejecutar `supabase_schema.sql` en el SQL Editor.
-3. Configurar variables de entorno:
+El proyecto usa un archivo `.env` con configuracion por defecto.
 
-```bash
-set APP_STORAGE=supabase
-set SUPABASE_URL=https://TU-PROYECTO.supabase.co
-set SUPABASE_SERVICE_ROLE_KEY=TU_SERVICE_ROLE_KEY
-python app.py
-```
+### Variable
 
-Usar la service role key solo en backend. No debe exponerse en JavaScript.
+| Variable | Descripcion |
+|----------|-------------|
+| `CONSULTADNI_TOKEN` | Token de [consultadni.com](https://www.consultadni.com/dev/login) |
 
-## Conectar Wokwi
+---
 
-En `main.py`, cambiar:
+## Roles de usuario
 
-```python
-SERVER_URL = "http://TU_HOST/api/data"
-```
+| Modulo | Descripcion |
+|--------|-------------|
+| Recepcion | Registrar paciente y cobrar consulta |
+| Caja | Confirmar pago y asignar consultorio |
+| Triaje | Capturar signos vitales |
+| Medico | Atender paciente, diagnosticar, recetar |
+| Farmacia | Entregar medicamentos |
+| Display | Pantalla de turnos |
+| Admin | Ver todos los pacientes |
 
-Para local normalmente se usa una URL publica temporal como ngrok o el dominio desplegado, porque Wokwi no siempre puede llegar a `localhost` de tu PC.
+---
 
-## Desplegar en Vercel
+## Simulación IoT (Wokwi)
 
-El proyecto incluye:
+Para probar el hardware sin necesidad fisica:
 
-- `api/index.py` como entrada WSGI.
-- `vercel.json` para reescribir rutas a Flask.
-- `public/static` para los archivos CSS y JS.
+### Requisitos
 
-En Vercel configurar estas variables:
+- Extension **Wokwi Simulation** en VS Code
 
-```bash
-APP_STORAGE=supabase
-SUPABASE_URL=https://TU-PROYECTO.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=TU_SERVICE_ROLE_KEY
-CONSULTADNI_TOKEN=TU_TOKEN_DE_CONSULTADNI
-```
+### Ejecución
 
-Luego desplegar conectando el repositorio o con:
+1. Abrir el archivo `diagram.json` y presionar **Play** (inicia simulador)
+2. Abrir otra terminal y ejecutar:
 
 ```bash
-vercel deploy
+./subir_codigo.bat
 ```
+
+3. El simulador enviara datos al sistema
+
+---
+
+## Tech Stack
+
+- Python 3.10+
+- Flask 3.x
+- SQLite
+
+## Licencia
+
+MIT
