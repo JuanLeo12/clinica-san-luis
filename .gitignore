@@ -1,20 +1,28 @@
+# Python
 __pycache__/
 *.py[cod]
+*.egg-info/
 
+# Entornos virtuales
 .venv/
 venv/
 env/
 
+# Variables de entorno (sensible)
 .env
-.env.*
 !.env.example
 
-
-
+# Respaldos
 *.bak
 *.bak2
 
+# OS
 .DS_Store
 Thumbs.db
 
+# Vercel
 .vercel/
+
+# Microscopy/tmp
+*.tmp
+*.log
