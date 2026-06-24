@@ -61,6 +61,8 @@ def _translate_status(status: str, status_type: str) -> str:
         "finalizado": "completed",
         "no_entregado": "not_started",
         "entregado": "completed",
+        "ninguno": "none",
+        "dispensado": "dispensed",
     }
     # Database demo values to frontend expected values
     db_to_frontend = {
@@ -145,6 +147,7 @@ def create_app() -> Flask:
         snapshot = repo.snapshot()
         snapshot["latest_iot"] = latest_iot_data
         snapshot["storage"] = os.getenv("APP_STORAGE", "sqlite")
+        snapshot["active_triage_appointment_id"] = repo.get_setting("activo_triedad_id_cita")
         # Transform Spanish fields to English for frontend
         patients = [_transform_patient(p) for p in snapshot.get("pacientes", [])]
         workers = _transform_workers(snapshot.get("trabajadores", []))
@@ -357,6 +360,21 @@ def create_app() -> Flask:
             payment_method=str(payload.get("payment_method") or "Efectivo"),
             created_by=str(payload.get("created_by") or ""),
         )
+        # Crear transacción después del pago
+        if appointment.get("estado_pago") == "paid":
+            patient = appointment.get("patient", {})
+            specialty = appointment.get("specialty", {})
+            repo.create_transaction(
+                modulo="cashier",
+                tipo_referencia="appointment",
+                id_referencia=appointment_id,
+                documento_paciente=patient.get("documento", ""),
+                nombre_paciente=f"{patient.get('nombre', '')} {patient.get('apellido', '')}".strip(),
+                concepto=f"Consulta - {specialty.get('nombre', 'Especialidad')}",
+                monto=specialty.get("price", 0),
+                metodo_pago=str(payload.get("payment_method") or "Efectivo"),
+                creado_por=str(payload.get("created_by") or ""),
+            )
         return jsonify({"appointment": appointment}), 200
 
     @app.route("/api/triage/<int:appointment_id>/activate", methods=["POST"])
@@ -391,6 +409,20 @@ def create_app() -> Flask:
             payment_method=str(payload.get("payment_method") or "Efectivo"),
             created_by=str(payload.get("created_by") or ""),
         )
+        # Crear transacción después de dispensar
+        if prescription.get("estado") == "dispensed":
+            patient = prescription.get("patient", {})
+            repo.create_transaction(
+                modulo="pharmacy",
+                tipo_referencia="prescription",
+                id_referencia=prescription_id,
+                documento_paciente=prescription.get("documento_paciente", ""),
+                nombre_paciente=prescription.get("nombre_paciente", ""),
+                concepto="Medicamentos - Receta",
+                monto=prescription.get("total", 0),
+                metodo_pago=str(payload.get("payment_method") or "Efectivo"),
+                creado_por=str(payload.get("created_by") or ""),
+            )
         return jsonify({"prescription": prescription}), 200
 
     @app.route("/api/auth/login", methods=["POST"])
@@ -401,18 +433,27 @@ def create_app() -> Flask:
         user = repo.authenticate_user(username, password)
         if user is None:
             return jsonify({"status": "error", "message": "Credenciales invalidas"}), 401
-        
+
+        # Mapear nombres de campos de español a inglés
+        user_en = {
+            "username": user.get("nombre_usuario"),
+            "full_name": user.get("nombre_completo"),
+            "role": user.get("rol"),
+            "id": user.get("id"),
+            "active": user.get("activo"),
+        }
+
         # Redirigir según el rol
         role_first_view = {
             "admin": "admin",
-            "reception": "reception", 
+            "reception": "reception",
             "cashier": "cashier",
             "triage": "triage",
             "doctor": "doctor",
             "pharmacy": "pharmacy"
         }
-        first_view = role_first_view.get(user.get("role"), "dashboard")
-        return jsonify({"user": user, "redirect": "/#" + first_view}), 200
+        first_view = role_first_view.get(user_en.get("role"), "dashboard")
+        return jsonify({"user": user_en, "redirect": "/#" + first_view}), 200
 
 
     @app.route("/api/auth/logout", methods=["POST"])
@@ -552,7 +593,7 @@ def create_app() -> Flask:
                         "message": "Datos IoT actualizados",
                         "data": latest_iot_data,
                         "active_triage_appointment_id": repo.get_setting(
-                            "active_triage_appointment_id"
+                            "activo_triedad_id_cita"
                         ),
                     }
                 ),

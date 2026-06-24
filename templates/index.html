@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clinica San Luis - Gestion interna</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=20250622" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=20250623" />
   </head>
   <body>
     <div class="app-shell">
@@ -424,23 +424,42 @@
             <h2>Sala de espera</h2>
             <p>Clinica San Luis</p>
           </div>
-          <div class="display-board">
-            <div>
-              <span>Triaje</span>
-              <strong id="display-triage-ticket">--</strong>
-              <p id="display-triage-name">Sin llamado</p>
+          <div class="display-container">
+            <div class="display-column">
+              <div class="display-card display-card-triage">
+                <div class="display-card-header">
+                  <span class="display-card-icon">🩺</span>
+                  <span>Triaje</span>
+                </div>
+                <strong class="display-card-ticket" id="display-triage-ticket">--</strong>
+                <p class="display-card-name" id="display-triage-name">Sin llamado</p>
+                <div class="display-card-meta" id="display-triage-meta"></div>
+              </div>
+              <div class="display-list">
+                <h3>Proximos en Triaje</h3>
+                <div id="display-triage-list"></div>
+              </div>
             </div>
-            <div>
-              <span>Consultorio</span>
-              <strong id="display-doctor-ticket">--</strong>
-              <p id="display-doctor-name">Sin llamado</p>
+            <div class="display-column">
+              <div class="display-card display-card-doctor">
+                <div class="display-card-header">
+                  <span class="display-card-icon">👨‍⚕️</span>
+                  <span>Consultorio</span>
+                </div>
+                <strong class="display-card-ticket" id="display-doctor-ticket">--</strong>
+                <p class="display-card-name" id="display-doctor-name">Sin llamado</p>
+                <div class="display-card-meta" id="display-doctor-meta"></div>
+              </div>
+              <div class="display-list">
+                <h3>Proximos en Consulta</h3>
+                <div id="display-consultation-list"></div>
+              </div>
             </div>
           </div>
-          <div class="display-list" id="display-next-list"></div>
         </section>
       </main>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="{{ url_for('static', filename='app.js') }}?v=20250622" defer></script>
+    <script src="{{ url_for('static', filename='app.js') }}?v=20250623" defer></script>
   </body>
 </html>

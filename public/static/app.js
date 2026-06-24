@@ -237,8 +237,14 @@ function bindFormEnhancements() {
 
 function switchView(view, force = false) {
   if (!view) return;
-  if (!force && currentUser && !(ROLE[currentUser.role] || []).includes(view))
+  const allowed = ROLE[currentUser.role] || [];
+  if (!force && currentUser && !allowed.includes(view)) {
+    // Mostrar toast de acceso denegado (excepto para admin que tiene acceso a todo)
+    if (currentUser.role !== "admin") {
+      showToast(`No tiene acceso a ${roleName(view)}. Contacte al administrador.`, "error");
+    }
     return;
+  }
   activeView = view;
   document
     .querySelectorAll(".view")
@@ -485,10 +491,11 @@ function renderCashier() {
 
 function renderTriage() {
   const queue = appState.appointments.filter((item) =>
-    ["waiting", "in_progress"].includes(item.triage_status),
+    item.payment_status === "paid" && ["waiting", "in_progress"].includes(item.triage_status),
   );
-  selectedTriageId =
-    selectedTriageId || Number(appState.active_triage_appointment_id) || null;
+  const storedId = Number(appState.active_triage_appointment_id);
+  console.log("renderTriage:", { storedId, selectedTriageId, queueLen: queue.length });
+  selectedTriageId = selectedTriageId || storedId || null;
   html(
     "triage-queue",
     queue.length
@@ -1850,28 +1857,78 @@ function renderMlInsights() {
 }
 
 function renderDisplay() {
+  const appointments = appState.appointments || [];
+
+  // Ordenar por prioridad y riesgo (igual que en médico)
+  const sortByRisk = (a, b) => {
+    const priorityOrder = { "Emergencia": 0, "Urgente": 1, "Preferente": 2, "Rutina": 3 };
+    const triageA = a.triage || {};
+    const triageB = b.triage || {};
+    const orderA = priorityOrder[triageA.priority] ?? 3;
+    const orderB = priorityOrder[triageB.priority] ?? 3;
+    if (orderA !== orderB) return orderA - orderB;
+    return (triageB.risk_score || 0) - (triageA.risk_score || 0);
+  };
+
+  // Pacientes llamados
   const triage = appState.called.triage;
   const doctor = appState.called.doctor;
+  const calledTriageId = triage?.id || null;
+  const calledDoctorId = doctor?.id || null;
+
+  // Pacientes esperados para triage (pagados, triaje no completado) - exclude los llamados
+  const forTriage = appointments
+    .filter((item) => item.payment_status === "paid" && item.triage_status === "waiting" && item.id !== calledTriageId)
+    .sort(sortByRisk)
+    .slice(0, 2);
+
+  // Pacientes esperados para consulta - exclude los llamados
+  const forConsultation = appointments
+    .filter((item) => item.payment_status === "paid" && item.consultation_status === "waiting" && item.id !== calledDoctorId)
+    .sort(sortByRisk)
+    .slice(0, 2);
   setText("display-triage-ticket", triage?.ticket || "--");
-  setText("display-triage-name", triage?.patient?.full_name || "Sin llamado");
+  setText("display-triage-name", triage?.patient?.nombre_completo || triage?.patient?.full_name || "Sin llamado");
+  setText("display-triage-meta", triage?.specialty?.name || "");
+
   setText("display-doctor-ticket", doctor?.ticket || "--");
-  setText("display-doctor-name", doctor?.patient?.full_name || "Sin llamado");
-  const next = appState.appointments
-    .filter(
-      (item) => item.payment_status === "paid" && item.status !== "completed",
-    )
-    .slice(0, 50);
+  setText("display-doctor-name", doctor?.patient?.nombre_completo || doctor?.patient?.full_name || "Sin llamado");
+  setText("display-doctor-meta", doctor?.specialty?.name || "");
+
+  // Lista de siguiente triaje
   html(
-    "display-next-list",
-    next.length
-      ? next
+    "display-triage-list",
+    forTriage.length
+      ? forTriage
           .map(
             (item) => `
-    <div class="display-next"><strong>${escapeHtml(item.ticket)}</strong><span>${escapeHtml(item.patient.full_name)}</span><small>${escapeHtml(item.specialty.name)}</small></div>
+    <div class="display-next">
+      <strong>${escapeHtml(item.ticket)}</strong>
+      <span>${escapeHtml(item.patient.nombre_completo || item.patient.full_name)}</span>
+      <small>${escapeHtml(item.specialty.name)}</small>
+    </div>
   `,
           )
           .join("")
-      : "",
+      : '<div class="display-next"><span>No hay pacientes</span></div>',
+  );
+
+  // Lista de siguiente consulta
+  html(
+    "display-consultation-list",
+    forConsultation.length
+      ? forConsultation
+          .map(
+            (item) => `
+    <div class="display-next">
+      <strong>${escapeHtml(item.ticket)}</strong>
+      <span>${escapeHtml(item.patient.full_name)}</span>
+      <small>${escapeHtml(item.specialty.name)}</small>
+    </div>
+  `,
+          )
+          .join("")
+      : '<div class="display-next"><span>No hay pacientes</span></div>',
   );
 }
 
@@ -1894,11 +1951,16 @@ document.addEventListener("click", async (event) => {
       showToast("Paciente llamado a triaje", "success");
       await loadState();
     } else if (button.dataset.startTriage) {
-      await apiPost(`/api/triage/${button.dataset.startTriage}/activate`);
-      selectedTriageId = Number(button.dataset.startTriage);
-      syncIoTToForm();
-      showToast("Paciente activo para triaje", "success");
-      await loadState();
+      try {
+        const result = await apiPost(`/api/triage/${button.dataset.startTriage}/activate`);
+        selectedTriageId = Number(button.dataset.startTriage);
+        syncIoTToForm();
+        showToast("Paciente activo para triaje", "success");
+        await loadState();
+        renderTriage(); // Forzar renderizado inmediata
+      } catch (err) {
+        showToast(err.message || "Error al activar triaje", "error");
+      }
     } else if (button.dataset.callDoctor) {
       await apiPost(`/api/appointments/${button.dataset.callDoctor}/call`, {
         target: "doctor",

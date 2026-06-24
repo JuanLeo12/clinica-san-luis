@@ -1327,9 +1327,9 @@ class SQLiteRepository(BaseRepository):
             ).fetchone()
             if row is None:
                 raise ValueError("Cita no encontrada.")
-            if row["estado_pago"] != "paid":
+            if row["estado_pago"] not in ("paid", "pagado"):
                 raise ValueError("La cita debe estar pagada antes de triaje.")
-            if row["estado_triaje"] == "done":
+            if row["estado_triaje"] in ("done", "finalizado"):
                 raise ValueError("El triaje ya fue registrado.")
 
             conn.execute(
@@ -2051,6 +2051,32 @@ class SQLiteRepository(BaseRepository):
     def list_transactions(self):
         return self.list_transacciones()
 
+    def create_transaction(
+        self,
+        modulo: str,
+        tipo_referencia: str,
+        id_referencia: int,
+        documento_paciente: str,
+        nombre_paciente: str,
+        concepto: str,
+        monto: float,
+        metodo_pago: str = "Efectivo",
+        creado_por: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        with self._connect() as conn:
+            return self._record_transaction(
+                conn,
+                modulo,
+                tipo_referencia,
+                id_referencia,
+                documento_paciente,
+                nombre_paciente,
+                concepto,
+                monto,
+                metodo_pago,
+                creado_por,
+            )
+
     def update_user(self, user_id, payload):
         return None
 
@@ -2335,9 +2361,9 @@ class SupabaseRepository(BaseRepository):
         appointment = self.get_appointment(id_cita)
         if not appointment:
             raise ValueError("Cita no encontrada.")
-        if appointment["estado_pago"] != "paid":
+        if appointment.get("estado_pago") not in ("paid", "pagado"):
             raise ValueError("La cita debe estar pagada antes de triaje.")
-        if appointment["estado_triaje"] == "done":
+        if appointment.get("estado_triaje") in ("done", "finalizado"):
             raise ValueError("El triaje ya fue registrado.")
         self._patch(
             "citas",

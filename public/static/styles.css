@@ -1640,31 +1640,38 @@ th {
   display: block;
 }
 
+.public-display .sidebar {
+  display: none !important;
+}
+
 .public-display main {
   padding: 30px;
+  margin-left: 0;
 }
 
 .display-view {
   color: #fff;
   min-height: calc(100vh - 60px);
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+  padding: 12px;
 }
 
 .display-header {
-  align-items: end;
+  align-items: center;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 12px;
 }
 
 .display-header h2 {
-  font-size: clamp(34px, 6vw, 72px);
+  font-size: clamp(32px, 5vw, 48px);
   line-height: 1;
 }
 
 .display-header p {
   color: #99f6e4;
-  font-size: clamp(18px, 3vw, 30px);
-  font-weight: 900;
+  font-size: clamp(14px, 2vw, 20px);
+  font-weight: 700;
 }
 
 .display-board {
@@ -1712,8 +1719,8 @@ th {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
-  min-height: 98px;
-  padding: 14px;
+  min-height: 70px;
+  padding: 12px;
 }
 
 .display-next strong,
@@ -1723,17 +1730,177 @@ th {
 }
 
 .display-next strong {
-  font-size: 28px;
+  font-size: 20px;
 }
 
 .display-next span {
   color: #e0f2fe;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .display-next small {
   color: #99f6e4;
   margin-top: 4px;
+}
+
+/* Display stats */
+.display-stats {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 24px;
+}
+
+.display-stat {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.display-stat-label {
+  color: #99f6e4;
+  display: block;
+  font-size: clamp(14px, 2vw, 18px);
+  font-weight: 600;
+}
+
+.display-stat-value {
+  color: #fff;
+  display: block;
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 900;
+}
+
+/* Display cards improved */
+.display-card {
+  background: linear-gradient(135deg, rgba(0, 139, 139, 0.4), rgba(49, 107, 255, 0.3));
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  min-height: 280px;
+  padding: 20px;
+  position: relative;
+}
+
+.display-card-triage {
+  background: linear-gradient(145deg, #0d9488, #0e7490);
+}
+
+.display-card-doctor {
+  background: linear-gradient(145deg, #7c3aed, #4f46e5);
+}
+
+.display-card-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.display-card-icon {
+  font-size: clamp(20px, 3vw, 28px);
+}
+
+.display-card-header span:not(.display-card-icon) {
+  color: #ccfbf1;
+  font-size: clamp(14px, 2vw, 18px);
+  font-weight: 700;
+}
+
+.display-card-ticket {
+  display: block;
+  font-size: clamp(80px, 14vw, 150px);
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 16px 0;
+}
+
+.display-card-name {
+  color: #fff;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.display-card-meta {
+  bottom: 20px;
+  color: #ccfbf1;
+  font-size: clamp(14px, 2vw, 20px);
+  left: 28px;
+  position: absolute;
+  right: 28px;
+}
+
+/* Display list improved */
+.display-list h3 {
+  color: #99f6e4;
+  font-size: clamp(14px, 2vw, 18px);
+  font-weight: 700;
+  margin: 12px 0 8px;
+}
+
+.display-list {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.display-list .display-next {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+@media (max-width: 768px) {
+  .display-stats,
+  .display-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Display container - two columns layout */
+.display-container {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.display-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.display-column .display-card {
+  flex-shrink: 0;
+}
+
+.display-column .display-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  margin-top: 0;
+}
+
+.display-column .display-list h3 {
+  margin-top: 0;
+}
+
+.display-column .display-list > div {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 12px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .display-container {
+    grid-template-columns: 1fr;
+  }
 }
 
 .login-page {
