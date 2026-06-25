@@ -2441,7 +2441,71 @@ class SupabaseRepository(BaseRepository):
         if self.get_setting("activo_triedad_id_cita") == str(id_cita):
             self.set_setting("activo_triedad_id_cita", None)
         self._audit("triedad_captured", "expedientes", id_cita, f"Triaje {analysis['prioridad']} registrado")
+        # Exportar a CSV
+        self._export_triage_csv()
         return self.get_appointment(id_cita) or {}
+
+    def _export_triage_csv(self) -> None:
+        """Exporta datos de triaje a CSV con columnas del dataset original."""
+        import csv
+        from datetime import datetime
+
+        csv_path = os.path.join(os.path.dirname(__file__), "triage_dataset.csv")
+
+        with self._connect() as conn:
+            rows = conn.execute("""
+                SELECT
+                    p.edad,
+                    e.temperatura,
+                    e.ritmo_cardiaco,
+                    e.spo2,
+                    e.sistolica AS presion_sistolica,
+                    e.diastolica AS presion_diastolica,
+                    e.peso,
+                    e.altura,
+                    e.imc,
+                    e.etiqueta_riesgo,
+                    e.prioridad,
+                    e.minutos_estimados
+                FROM expedientes e
+                JOIN citas c ON e.id_cita = c.id
+                JOIN pacientes p ON c.id_paciente = p.id
+                WHERE e.temperatura IS NOT NULL AND e.peso IS NOT NULL
+            """).fetchall()
+
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "edad", "temperatura", "ritmo_cardiaco", "spo2",
+                "presion_sistolica", "presion_diastolica", "peso", "altura",
+                "imc", "riesgo_binario", "prioridad", "minutos_estimados"
+            ])
+            for row in rows:
+                # Calcular IMC si es null
+                imc_val = row["imc"]
+                if imc_val is None and row["peso"] and row["altura"]:
+                    imc_val = round(row["peso"] / (row["altura"] / 100) ** 2, 1)
+
+                # Lógica combinada: riesgo = 1 si prioridad es Urgente/Emergencia O etiqueta_riesgo es Alto/Crítico
+                if row["prioridad"] in ["Urgente", "Emergencia"] or row["etiqueta_riesgo"] in ["Alto", "Crítico", "Muy Alto"]:
+                    riesgo = 1
+                else:
+                    riesgo = 0
+
+                writer.writerow([
+                    row["edad"],
+                    row["temperatura"],
+                    row["ritmo_cardiaco"],
+                    row["spo2"],
+                    row["presion_sistolica"],
+                    row["presion_diastolica"],
+                    row["peso"],
+                    row["altura"],
+                    round(imc_val, 1) if imc_val else "",
+                    riesgo,
+                    row["prioridad"],
+                    int(row["minutos_estimados"]) if row["minutos_estimados"] else ""
+                ])
 
     def create_consultation(self, id_cita: int, payload: Dict[str, Any]) -> Dict[str, Any]:
         appointment = self.get_appointment(id_cita)
