@@ -207,6 +207,15 @@ def create_app() -> Flask:
                 imc = 0
                 if peso and altura and altura > 0:
                     imc = round(peso / ((altura / 100) ** 2), 1)
+                # Parse analysis JSON if available
+                analysis = {}
+                try:
+                    analisis_json = exp.get("analisis_json", "")
+                    if analisis_json:
+                        import json
+                        analysis = json.loads(analisis_json) if isinstance(analisis_json, str) else analisis_json
+                except Exception:
+                    pass
                 apt["triage"] = {
                     "priority": exp.get("prioridad", "Rutina"),
                     "risk_score": exp.get("puntuacion_riesgo", 0),
@@ -220,6 +229,9 @@ def create_app() -> Flask:
                     "weight": peso,
                     "height": altura,
                     "bmi": imc,
+                    "predicted_systolic": exp.get("sistolica_predicha"),
+                    "decision_summary": exp.get("resumen_decision", ""),
+                    "analysis": analysis,
                 }
             # Add consultation data if available
             cons = consulta_map.get(apt.get("id"))
@@ -357,8 +369,8 @@ def create_app() -> Flask:
         payload = _json_payload(required=False)
         appointment = repo.mark_paid(
             appointment_id,
-            payment_method=str(payload.get("payment_method") or "Efectivo"),
-            created_by=str(payload.get("created_by") or ""),
+            metodo_pago=str(payload.get("payment_method") or "Efectivo"),
+            creado_por=str(payload.get("created_by") or ""),
         )
         # Crear transacción después del pago
         if appointment.get("estado_pago") == "paid":
@@ -744,11 +756,18 @@ def create_app() -> Flask:
 
     @app.errorhandler(ValueError)
     def handle_value_error(error: ValueError):
-        return jsonify({"status": "error", "message": str(error)}), 400
+        import traceback
+        return jsonify({"status": "error", "message": str(error), "trace": traceback.format_exc()}), 400
 
     @app.errorhandler(RuntimeError)
     def handle_runtime_error(error: RuntimeError):
-        return jsonify({"status": "error", "message": str(error)}), 500
+        import traceback
+        return jsonify({"status": "error", "message": str(error), "trace": traceback.format_exc()}), 500
+
+    @app.errorhandler(RecursionError)
+    def handle_recursion_error(error: RecursionError):
+        import traceback
+        return jsonify({"status": "error", "message": str(error), "trace": traceback.format_exc()}), 500
 
     return app
 
@@ -881,13 +900,13 @@ def _normalize_vitals(payload: Dict[str, Any]) -> Dict[str, Any]:
     systolic, diastolic = blood_pressure()
 
     vitals = {
-        "temperature": round(number("temperature", "temperatura", default=36.5), 1),
-        "heart_rate": int(round(number("heart_rate", "ritmo_cardiaco", default=75))),
-        "spO2": int(round(number("spO2", "spo2", "saturation", default=98))),
-        "blood_pressure_systolic": systolic,
-        "blood_pressure_diastolic": diastolic,
-        "weight": round(number("weight", "peso", default=70.0), 1),
-        "height": round(number("height", "talla", default=170.0), 1),
+        "temperatura": round(number("temperature", "temperatura", default=0.0) or 36.5, 1),
+        "ritmo_cardiaco": int(round(number("heart_rate", "ritmo_cardiaco", default=0.0) or 75)),
+        "spO2": int(round(number("spO2", "spo2", "saturation", default=0.0) or 98)),
+        "blood_pressure_sistolica": systolic,
+        "blood_pressure_diastolica": diastolic,
+        "peso": round(number("weight", "peso", default=0.0) or 70.0, 1),
+        "altura": round(number("height", "altura", "talla", default=0.0) or 170.0, 1),
     }
     return vitals
 

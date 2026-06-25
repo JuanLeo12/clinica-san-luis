@@ -66,7 +66,7 @@
             <section class="panel">
               <div class="panel-head"><h3>Buscar paciente</h3></div>
               <input id="patient-search" placeholder="DNI, nombre o apellido" />
-              <div class="queue-list search-results" id="patient-search-results"></div>
+              <div class="queue-list search-results scrollable" id="patient-search-results"></div>
             </section>
           </div>
           <section class="panel">
@@ -112,13 +112,13 @@
                 <span class="pill" id="active-triage-pill">Sin paciente activo</span>
               </div>
               <form class="vitals-form" id="vitals-form">
-                <label>Temp. C<input name="temperature" step="0.1" type="number" readonly /></label>
-                <label>FC<input name="heart_rate" type="number" readonly /></label>
+                <label>Temp. C<input name="temperatura" step="0.1" type="number" readonly /></label>
+                <label>FC<input name="ritmo_cardiaco" type="number" readonly /></label>
                 <label>SpO2<input name="spO2" type="number" readonly /></label>
-                <label>PAS<input name="blood_pressure_systolic" type="number" readonly /></label>
-                <label>PAD<input name="blood_pressure_diastolic" type="number" readonly /></label>
-                <label>Peso kg<input name="weight" step="0.1" type="number" readonly /></label>
-                <label>Talla cm<input name="height" step="0.1" type="number" readonly /></label>
+                <label>PAS<input name="blood_pressure_sistolica" type="number" readonly /></label>
+                <label>PAD<input name="blood_pressure_diastolica" type="number" readonly /></label>
+                <label>Peso kg<input name="peso" step="0.1" type="number" readonly /></label>
+                <label>Talla cm<input name="altura" step="0.1" type="number" readonly /></label>
                 <div class="form-actions wide">
                   <button class="secondary-button" id="sync-iot-button" type="button">Capturar IoT</button>
                   <button class="primary-button" id="capture-triage-button" type="submit" disabled>Guardar triaje</button>
@@ -145,10 +145,10 @@
               </div>
               <div class="analysis-box" id="doctor-patient-summary"></div>
               <form id="consultation-form" class="consultation-form">
-                <label>Sintomas<textarea name="symptoms" rows="3"></textarea></label>
-                <label>Diagnostico<textarea name="diagnosis" rows="3" required></textarea></label>
-                <label>Indicaciones<textarea name="treatment_notes" rows="3"></textarea></label>
-                <label>Observaciones<textarea name="notes" rows="2"></textarea></label>
+                <label>Sintomas<textarea name="sintomas" rows="3"></textarea></label>
+                <label>Diagnostico<textarea name="diagnostico" rows="3" required></textarea></label>
+                <label>Indicaciones<textarea name="tratamiento_notas" rows="3"></textarea></label>
+                <label>Observaciones<textarea name="notas" rows="2"></textarea></label>
                 <div class="panel-subhead">
                   <h4>Receta</h4>
                   <button class="ghost-button" id="add-medicine-button" type="button">Agregar medicamento</button>
@@ -170,7 +170,7 @@
             <section class="panel">
               <div class="panel-head"><h3>Recetas pendientes</h3></div>
               <input id="pharmacy-search" placeholder="Buscar paciente, DNI o turno" />
-              <div class="queue-list" id="pharmacy-pending"></div>
+              <div class="queue-list scrollable" id="pharmacy-pending"></div>
             </section>
             <section class="panel">
               <div class="panel-head"><h3>Medicamentos disponibles</h3></div>

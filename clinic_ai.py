@@ -342,18 +342,22 @@ class ClinicalML:
         self.decision_tree.fit(rows, priority_labels)
 
     def analyze(self, vitals: Dict[str, Any], patient: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        # Soportar nombres en español e inglés
+        def get_float(*keys, default=0.0):
+            for k in keys:
+                v = vitals.get(k)
+                if v is not None:
+                    return float(v)
+            return default
+
         age = int((patient or {}).get("age") or vitals.get("age") or 35)
-        temperature = float(vitals.get("temperature") or 0)
-        heart_rate = int(float(vitals.get("heart_rate") or 0))
-        spo2 = int(float(vitals.get("spO2") or vitals.get("spo2") or 0))
-        systolic = int(
-            float(vitals.get("blood_pressure_systolic") or vitals.get("systolic") or 0)
-        )
-        diastolic = int(
-            float(vitals.get("blood_pressure_diastolic") or vitals.get("diastolic") or 0)
-        )
-        weight = float(vitals.get("weight") or 0)
-        height = float(vitals.get("height") or 0)
+        temperature = get_float("temperature", "temperatura", default=36.5)
+        heart_rate = int(get_float("heart_rate", "ritmo_cardiaco", default=75))
+        spo2 = int(get_float("spO2", "spo2", "saturation", default=98))
+        systolic = int(get_float("blood_pressure_systolic", "blood_pressure_sistolica", "sistolica", default=120))
+        diastolic = int(get_float("blood_pressure_diastolic", "blood_pressure_diastolica", "diastolica", default=80))
+        weight = get_float("weight", "peso", default=70.0)
+        height = get_float("height", "altura", "talla", default=170.0)
         bmi = self.calculate_bmi(weight, height)
         features = [age, temperature, heart_rate, spo2, systolic, diastolic, bmi]
 
@@ -386,16 +390,22 @@ class ClinicalML:
 
         urgency_score = min(100, round(urgency_score, 1))
 
+        decision_text = self._decision_summary(flags, priority, risk_label)
         return {
             "bmi": round(bmi, 2),
+            "imc": round(bmi, 2),
             "risk_probability": round(risk_probability, 3),
             "risk_label": risk_label,
+            "etiqueta_riesgo": risk_label,
             "priority": priority,
             "urgency_score": urgency_score,
             "predicted_systolic": round(predicted_systolic, 1),
+            "sistolica_predicha": round(predicted_systolic, 1),
             "estimated_attention_minutes": round(_clamp(estimated_minutes, 8, 45), 1),
+            "minutos_estimados": round(_clamp(estimated_minutes, 8, 45), 1),
+            "decision_summary": decision_text,
+            "resumen_decision": decision_text,
             "flags": flags,
-            "decision_summary": self._decision_summary(flags, priority, risk_label),
             "algorithms": {
                 "linear_regression": "Predice presion sistolica esperada desde el ritmo cardiaco.",
                 "multiple_linear_regression": "Estima minutos de consulta usando edad y signos vitales.",

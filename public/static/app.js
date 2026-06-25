@@ -303,6 +303,7 @@ async function loadState() {
     appState.specialties = specialties.specialties || state.specialties || [];
     appState.appointments = state.appointments || [];
     appState.prescriptions = state.prescriptions || [];
+    console.log("DEBUG: state.transactions from API:", state.transactions ? state.transactions.length : 0);
     const newTransactions = state.transactions || [];
     appState.latest_iot = state.latest_iot || {};
     appState.stats = state.stats || {};
@@ -338,9 +339,13 @@ async function loadState() {
       "last-sync",
       `Actualizado ${new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`,
     );
-    // Solo re-renderizar si los datos cambiaron
-    if (dataChanged) {
+    // Siempre re-renderizar pharmacy (para actualizar lista de recetas y transacciones)
+    if (dataChanged || activeView === "pharmacy") {
       renderViews();
+    }
+    // Display siempre debe actualizarse en tiempo real
+    if (activeView === "display") {
+      renderDisplay();
     }
     // Verificar stock bajo (solo para admin y pharmacy)
     checkLowStock();
@@ -490,9 +495,18 @@ function renderCashier() {
 }
 
 function renderTriage() {
-  const queue = appState.appointments.filter((item) =>
-    item.payment_status === "paid" && ["waiting", "in_progress"].includes(item.triage_status),
-  );
+  const queue = appState.appointments
+    .filter((item) =>
+      item.payment_status === "paid" && ["waiting", "in_progress"].includes(item.triage_status),
+    )
+    .sort((a, b) => {
+      // Ordenar por fecha_pago (FIFO - primero en pagar = primero en triaje)
+      const dateA = a.fecha_pago || "";
+      const dateB = b.fecha_pago || "";
+      if (dateA < dateB) return -1;
+      if (dateA > dateB) return 1;
+      return a.id - b.id; // Si same fecha, ordenar por ID
+    });
   const storedId = Number(appState.active_triage_appointment_id);
   console.log("renderTriage:", { storedId, selectedTriageId, queueLen: queue.length });
   selectedTriageId = selectedTriageId || storedId || null;
@@ -634,8 +648,11 @@ function renderPharmacy() {
   const done = appState.prescriptions
     .filter((item) => item.status === "dispensed");
   // Transacciones reales de pharmacy (module=pharmacy), no recetas
+  console.log("DEBUG: Total transactions:", appState.transactions.length);
+  console.log("DEBUG: All transaction modules:", appState.transactions.map(t => t.module));
   const pharmacyTransactions = appState.transactions
     .filter((t) => t.module === "pharmacy");
+  console.log("DEBUG: Pharmacy transactions:", pharmacyTransactions.length);
   const transactions = pharmacyTransactions;
   const medications = appState.medications.filter(
     (item) => !medQuery || item.name.toLowerCase().includes(medQuery),
@@ -1950,10 +1967,14 @@ document.addEventListener("click", async (event) => {
       });
       showToast("Paciente llamado a triaje", "success");
       await loadState();
+      renderDisplay(); // Actualizar display inmediatamente
     } else if (button.dataset.startTriage) {
       try {
         const result = await apiPost(`/api/triage/${button.dataset.startTriage}/activate`);
         selectedTriageId = Number(button.dataset.startTriage);
+        // Limpiar datos anteriores antes de cargar nuevos
+        document.getElementById("vitals-form").reset();
+        html("triage-analysis", ""); // Limpiar tabla ML anterior
         syncIoTToForm();
         showToast("Paciente activo para triaje", "success");
         await loadState();
@@ -1967,6 +1988,7 @@ document.addEventListener("click", async (event) => {
       });
       showToast("Paciente llamado a consultorio", "success");
       await loadState();
+      renderDisplay(); // Actualizar display inmediatamente
     } else if (button.dataset.selectConsultation) {
       selectedConsultationId = Number(button.dataset.selectConsultation);
       showToast("Consulta iniciada", "success");
@@ -1978,6 +2000,8 @@ document.addEventListener("click", async (event) => {
       });
       showToast("Cobro y entrega registrados", "success");
       await loadState();
+      // Forzar re-render para actualizar la lista de recetas pendientes
+      renderViews();
       // Verificar stock inmediatamente después de dispensar
       lastLowStockCheck = 0;
       checkLowStock();
@@ -2091,6 +2115,8 @@ document.addEventListener("submit", async (event) => {
       form.reset();
       showToast("Triaje guardado", "success");
       await loadState();
+      renderTriage(); // Quitar paciente de la cola
+      renderDisplay(); // Actualizar display
     } else if (form.id === "consultation-form") {
       if (!selectedConsultationId) throw new Error("Seleccione un paciente");
       const data = formData(form);
@@ -2144,7 +2170,7 @@ document.addEventListener("input", async (event) => {
         .map(
           (patient) => `
       <article class="queue-card" data-select-patient="${patient.id}">
-        <div><strong>${escapeHtml(patient.first_name)} ${escapeHtml(patient.last_name)}</strong><span>${escapeHtml(patient.document)} · ${patient.age} anos</span></div>
+        <div><strong>${escapeHtml(patient.first_name)} ${escapeHtml(patient.last_name)}</strong><span>${escapeHtml(patient.document)} · ${patient.age} años</span></div>
       </article>
     `,
         )
@@ -2323,7 +2349,8 @@ function prescriptionCard(item) {
 
 function renderTransactions(items) {
   if (!items.length) return empty("Sin transacciones registradas");
-  return items
+  // Mostrar del último al primero
+  return [...items].reverse()
     .map(
       (item) => {
         // Las prescripciones tienen 'total', las transacciones tienen 'amount'
@@ -2363,17 +2390,20 @@ function consultationMlSummary(item) {
   const triage = item.triage;
   if (!triage) return empty("Paciente sin triaje registrado.");
   const analysis = triage.analysis || {};
+  // Primary sources: analysis (from JSON column), fallback: triage (from aliases)
+  const predictedPA = analysis.sistolica_predicha ?? triage.predicted_systolic ?? triage.sistolica_predicha;
+  const estMinutes = analysis.minutos_estimados ?? triage.estimated_attention_minutes ?? triage.minutos_estimados;
   return `<div class="summary-grid">
     <span>Prioridad</span><strong>${escapeHtml(triage.priority)}</strong>
     <span>Riesgo</span><strong>${escapeHtml(triage.risk_label)}</strong>
     <span>Signos</span><strong>${triage.temperature} C - FC ${triage.heart_rate} - SpO2 ${triage.spo2}% - PA ${triage.systolic}/${triage.diastolic}</strong>
-    <span>ML</span><strong>PA esperada ${analysis.predicted_systolic ?? triage.predicted_systolic} - Consulta ${analysis.estimated_attention_minutes ?? triage.estimated_attention_minutes} min</strong>
+    <span>ML</span><strong>PA esperada ${predictedPA ?? "--"} - Consulta ${estMinutes ?? "--"} min</strong>
     <span>Decision</span><strong>${escapeHtml(triage.decision_summary)}</strong>
   </div>
   <div class="ml-result-grid compact-ml">
     <div><span>Regresion logistica</span><strong>Riesgo ${escapeHtml(triage.risk_label)}</strong><p>Ayuda a priorizar pacientes con mayor probabilidad de complicacion.</p></div>
     <div><span>Arbol de decision</span><strong>${escapeHtml(triage.priority)}</strong><p>Clasifica la atencion en emergencia, urgente, preferente o rutina.</p></div>
-    <div><span>Regresion multiple</span><strong>${analysis.estimated_attention_minutes ?? triage.estimated_attention_minutes} min</strong><p>Estima la carga de consulta para gestionar el flujo medico.</p></div>
+    <div><span>Regresion multiple</span><strong>${estMinutes ?? "--"} min</strong><p>Estima la carga de consulta para gestionar el flujo medico.</p></div>
   </div>`;
 }
 
@@ -2442,13 +2472,12 @@ function metric(label, valueText) {
 }
 
 function totalRevenue() {
-  const appointments = appState.appointments
-    .filter((item) => item.payment_status === "paid")
-    .reduce((sum, item) => sum + Number(item.specialty.price || 0), 0);
-  const pharmacy = appState.prescriptions
-    .filter((item) => item.status === "dispensed")
-    .reduce((sum, item) => sum + Number(item.total || 0), 0);
-  return appointments + pharmacy;
+  // Use transacciones table directly for consistency with Admin TRANSACCIONES
+  // Only count 'paid' transactions (both cash register and pharmacy)
+  const transactions = appState.transactions || [];
+  return transactions
+    .filter((t) => t.status === "paid")
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 }
 
 function matchesAppointment(item, query) {
@@ -2920,6 +2949,7 @@ const FIELD_MAP = {
   phone: "telefono",
   birth_date: "fecha_nacimiento",
   specialty_id: "id_especialidad",
+  tratamiento_notas: "tratamiento",
 };
 
 function formData(form) {

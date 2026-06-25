@@ -53,23 +53,23 @@ El proyecto usa un archivo `.env` con configuracion por defecto.
 
 ### Variable
 
-| Variable | Descripcion |
-|----------|-------------|
+| Variable            | Descripcion                                                       |
+| ------------------- | ----------------------------------------------------------------- |
 | `CONSULTADNI_TOKEN` | Token de [consultadni.com](https://www.consultadni.com/dev/login) |
 
 ---
 
 ## Roles de usuario
 
-| Modulo | Descripcion |
-|--------|-------------|
-| Recepcion | Registrar paciente y cobrar consulta |
-| Caja | Confirmar pago y asignar consultorio |
-| Triaje | Capturar signos vitales |
-| Medico | Atender paciente, diagnosticar, recetar |
-| Farmacia | Entregar medicamentos |
-| Display | Pantalla de turnos |
-| Admin | Ver todos los pacientes |
+| Modulo    | Descripcion                             |
+| --------- | --------------------------------------- |
+| Recepcion | Registrar paciente y cobrar consulta    |
+| Caja      | Confirmar pago y asignar consultorio    |
+| Triaje    | Capturar signos vitales                 |
+| Medico    | Atender paciente, diagnosticar, recetar |
+| Farmacia  | Entregar medicamentos                   |
+| Display   | Pantalla de turnos                      |
+| Admin     | Ver todos los pacientes                 |
 
 ---
 

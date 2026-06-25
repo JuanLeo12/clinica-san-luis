@@ -2777,6 +2777,12 @@ th {
   overflow-y: auto;
 }
 
+/* Reception patient search - mostrar 5 */
+#patient-search-results {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
 /* Overview list con scroll */
 .overview-list.scrollable {
   max-height: 400px;

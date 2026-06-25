@@ -205,6 +205,8 @@ class BaseRepository:
         id_receta: int,
         metodo_pago: str = "Efectivo",
         creado_por: Optional[str] = None,
+        payment_method: Optional[str] = None,
+        created_by: Optional[str] = None,
     ) -> Dict[str, Any]:
         raise NotImplementedError
 
@@ -790,13 +792,13 @@ class SQLiteRepository(BaseRepository):
                     vitals["diastolica"],
                     vitals["peso"],
                     vitals["altura"],
-                    analysis["imc"],
-                    analysis["prioridad"],
+                    analysis["bmi"],
+                    analysis["priority"],
                     analysis["risk_probability"],
-                    analysis["etiqueta_riesgo"],
-                    analysis["sistolica_predicha"],
-                    analysis["minutos_estimados"],
-                    analysis["resumen_decision"],
+                    analysis["risk_label"],
+                    analysis["predicted_systolic"],
+                    analysis["estimated_attention_minutes"],
+                    analysis["decision_summary"],
                     json.dumps(analysis),
                     utc_now(),
                 ),
@@ -1278,7 +1280,7 @@ class SQLiteRepository(BaseRepository):
                     """,
                     (row["id_especialidad"],),
                 ).fetchone()[0]
-                fecha_programada = local_now() + timedelta(minutes=(paid_count + 1) * int(row["duracion_min"]))
+                fecha_programada = local_now() + timedelta(minutes=(paid_count + 1) * int(row["duracion_minutos"]))
                 codigo_recibo = f"B{datetime.now().strftime('%Y%m%d%H%M')}-{id_cita:04d}"
                 conn.execute(
                     """
@@ -1398,13 +1400,13 @@ class SQLiteRepository(BaseRepository):
                     int(vitals["blood_pressure_diastolica"]),
                     float(vitals["peso"]),
                     float(vitals["altura"]),
-                    float(analysis["imc"]),
-                    analysis["prioridad"],
+                    float(analysis["bmi"]),
+                    analysis["priority"],
                     float(analysis["risk_probability"]),
-                    analysis["etiqueta_riesgo"],
-                    float(analysis["sistolica_predicha"]),
-                    float(analysis["minutos_estimados"]),
-                    analysis["resumen_decision"],
+                    analysis["risk_label"],
+                    float(analysis["predicted_systolic"]),
+                    float(analysis["estimated_attention_minutes"]),
+                    analysis["decision_summary"],
                     json.dumps(analysis),
                     fuente,
                     fecha_captura,
@@ -1426,7 +1428,7 @@ class SQLiteRepository(BaseRepository):
             ).fetchone()
             if activo and activo["valor"] == str(id_cita):
                 self._set_setting(conn, "activo_triedad_id_cita", None)
-            self._audit(conn, "triedad_captured", "expedientes", id_cita, f"Triaje {analysis['prioridad']} registrado")
+            self._audit(conn, "triedad_captured", "expedientes", id_cita, f"Triaje {analysis['priority']} registrado")
         appointment = self.get_appointment(id_cita)
         if appointment is None:
             raise RuntimeError("No se pudo recuperar la cita con triaje.")
@@ -1435,7 +1437,7 @@ class SQLiteRepository(BaseRepository):
     def create_consultation(self, id_cita: int, payload: Dict[str, Any]) -> Dict[str, Any]:
         sintomas = str(payload.get("sintomas") or "").strip()
         diagnostico = str(payload.get("diagnostico") or "").strip()
-        tratamiento_notas = str(payload.get("tratamiento_notas") or "").strip()
+        tratamiento = str(payload.get("tratamiento") or "").strip()
         notas = str(payload.get("notas") or "").strip()
         nombre_medico = str(payload.get("nombre_medico") or "").strip()
         items = [item for item in payload.get("receta_items") or [] if item.get("medicamento")]
@@ -1465,20 +1467,20 @@ class SQLiteRepository(BaseRepository):
                 conn.execute(
                     """
                     UPDATE consultas
-                    SET nombre_medico = ?, sintomas = ?, diagnostico = ?, tratamiento_notas = ?, notas = ?
+                    SET nombre_medico = ?, sintomas = ?, diagnostico = ?, tratamiento = ?, notas = ?
                     WHERE id = ?
                     """,
-                    (nombre_medico, sintomas, diagnostico, tratamiento_notas, notas, id_consulta),
+                    (nombre_medico, sintomas, diagnostico, tratamiento, notas, id_consulta),
                 )
             else:
                 cursor = conn.execute(
                     """
                     INSERT INTO consultas (
-                        id_cita, nombre_medico, sintomas, diagnostico, tratamiento_notas, notas, fecha_creacion
+                        id_cita, nombre_medico, sintomas, diagnostico, tratamiento, notas, fecha_creacion
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (id_cita, nombre_medico, sintomas, diagnostico, tratamiento_notas, notas, utc_now()),
+                    (id_cita, nombre_medico, sintomas, diagnostico, tratamiento, notas, utc_now()),
                 )
                 id_consulta = int(cursor.lastrowid)
 
@@ -1486,7 +1488,7 @@ class SQLiteRepository(BaseRepository):
                 "SELECT id, estado FROM recetas WHERE id_cita = ?", (id_cita,)
             ).fetchall()
             for old in old_recetas:
-                if old["estado"] != "dispensed":
+                if old["estado"] not in ("dispensed", "dispensado"):
                     conn.execute("DELETE FROM recetas WHERE id = ?", (old["id"],))
 
             total = 0.0
@@ -1550,6 +1552,8 @@ class SQLiteRepository(BaseRepository):
         id_receta: int,
         metodo_pago: str = "Efectivo",
         creado_por: Optional[str] = None,
+        payment_method: Optional[str] = None,
+        created_by: Optional[str] = None,
     ) -> Dict[str, Any]:
         with self._connect() as conn:
             prescription = conn.execute(
@@ -1569,7 +1573,7 @@ class SQLiteRepository(BaseRepository):
             if prescription is None:
                 raise ValueError("Receta no encontrada.")
             items = conn.execute(
-                "SELECT medicamento, cantidad FROM receta_items WHERE id_receta = ?",
+                "SELECT medicina, cantidad FROM receta_items WHERE id_receta = ?",
                 (id_receta,),
             ).fetchall()
             conn.execute(
@@ -1595,7 +1599,7 @@ class SQLiteRepository(BaseRepository):
                     SET stock = CASE WHEN stock >= ? THEN stock - ? ELSE 0 END
                     WHERE lower(nombre) = lower(?) AND activo = 1
                     """,
-                    (int(item["cantidad"]), int(item["cantidad"]), item["medicamento"]),
+                    (int(item["cantidad"]), int(item["cantidad"]), item["medicina"]),
                 )
             self._record_transaction(
                 conn,
@@ -1634,7 +1638,7 @@ class SQLiteRepository(BaseRepository):
                 JOIN pacientes p ON p.id = a.id_paciente
                 JOIN especialidades s ON s.id = a.id_especialidad
                 JOIN consultas c ON c.id = pr.id_consulta
-                ORDER BY pr.id DESC
+                ORDER BY pr.id ASC
                 """
             ).fetchall()
             item_rows = conn.execute("SELECT * FROM receta_items ORDER BY id").fetchall()
@@ -1645,6 +1649,15 @@ class SQLiteRepository(BaseRepository):
         for row in rows:
             item = dict(row)
             item["items"] = items_by_prescription.get(int(row["id"]), [])
+            # Map estado -> status para compatibilidad con frontend
+            # Map estado -> status para frontend: pending/dispensed
+            raw = item.get("estado", "")
+            if raw == "pendiente" or raw == "pending":
+                item["status"] = "pending"
+            elif raw == "dispensado" or raw == "dispensed":
+                item["status"] = "dispensed"
+            else:
+                item["status"] = raw or ""
             recetas.append(item)
         return recetas
 
@@ -1667,7 +1680,7 @@ class SQLiteRepository(BaseRepository):
             "pending_payment": len([item for item in citas if item["estado_pago"] == "pending"]),
             "waiting_triedad": len([item for item in citas if item["estado_triaje"] in {"waiting", "in_progress"}]),
             "waiting_consultation": len([item for item in citas if item["estado_consulta"] == "waiting"]),
-            "pending_pharmacy": len([item for item in recetas if item["estado"] == "pending"]),
+            "pending_pharmacy": len([item for item in recetas if item.get("status") == "pending"]),
             "completed": len([item for item in citas if item["estado"] == "completed"]),
         }
 
@@ -2040,7 +2053,7 @@ class SQLiteRepository(BaseRepository):
         return self.set_activo_triedad(id_cita)
 
     def capture_triage(self, id_cita, vitals, analysis, source):
-        return self.capture_triage(id_cita, vitals, analysis, source)
+        return self.capture_triedad(id_cita, vitals, analysis, source)
 
     def list_workers(self):
         return self.list_trabajadores()
@@ -2109,17 +2122,20 @@ class SQLiteRepository(BaseRepository):
         metodo_pago: str = "Efectivo",
         creado_por: Optional[str] = None,
     ) -> Dict[str, Any]:
-        existing = conn.execute(
-            """
-            SELECT *
-            FROM transacciones
-            WHERE modulo = ? AND tipo_referencia = ? AND id_referencia = ? AND estado = 'paid'
-            LIMIT 1
-            """,
-            (modulo, tipo_referencia, id_referencia),
-        ).fetchone()
-        if existing:
-            return dict(existing)
+        # For pharmacy module, always create new transactions (no duplicate check)
+        # This ensures each "Entregar" action creates a new transaction record
+        if modulo != "pharmacy":
+            existing = conn.execute(
+                """
+                SELECT *
+                FROM transacciones
+                WHERE modulo = ? AND tipo_referencia = ? AND id_referencia = ? AND estado = 'paid'
+                LIMIT 1
+                """,
+                (modulo, tipo_referencia, id_referencia),
+            ).fetchone()
+            if existing:
+                return dict(existing)
 
         conn.execute(
             """
@@ -2179,6 +2195,7 @@ class SQLiteRepository(BaseRepository):
             "estado_consulta": row["estado_consulta"],
             "estado_farmacia": row["estado_farmacia"],
             "consultorio": row["consultorio"],
+            "room": row["consultorio"] or row["especialidad_nombre"] or "Sin consultorio",
             "fecha_programada": row["fecha_programada"],
             "codigo_recibo": row["codigo_recibo"],
             "fecha_creacion": row["fecha_creacion"],
@@ -2209,6 +2226,12 @@ class SQLiteRepository(BaseRepository):
     def _triedad_dict(row: sqlite3.Row) -> Dict[str, Any]:
         data = dict(row)
         data["analysis"] = json.loads(data.get("analisis_json") or "{}")
+        # Aliases para compatibilidad con frontend
+        data["predicted_systolic"] = data.get("sistolica_predicha")
+        data["estimated_attention_minutes"] = data.get("minutos_estimados")
+        data["risk_score"] = data.get("puntuacion_riesgo")
+        data["risk_label"] = data.get("etiqueta_riesgo")
+        data["decision_summary"] = data.get("resumen_decision")
         return data
 
 
@@ -2267,6 +2290,7 @@ class SupabaseRepository(BaseRepository):
                         "nombre_completo": f"{patient.get('nombre', '')} {patient.get('apellido', '')}".strip(),
                     },
                     "specialty": specialty,
+                    "room": row.get("consultorio") or specialty.get("nombre") or "Sin consultorio",
                     "triedad": triedad.get(row["id"]),
                     "consultation": consultas.get(row["id"]),
                 }
@@ -2337,7 +2361,7 @@ class SupabaseRepository(BaseRepository):
                 and item["estado_pago"] == "paid"
             ]
         )
-        fecha_programada = local_now() + timedelta(minutes=(paid_count + 1) * int(specialty["duracion_min"]))
+        fecha_programada = local_now() + timedelta(minutes=(paid_count + 1) * int(specialty["duracion_minutos"]))
         codigo_recibo = f"B{datetime.now().strftime('%Y%m%d%H%M')}-{id_cita:04d}"
         self._patch(
             "citas",
@@ -2505,7 +2529,12 @@ class SupabaseRepository(BaseRepository):
         self._audit("consultation_saved", "consultas", consultation["id"], "Consulta medica registrada")
         return self.get_appointment(id_cita) or appointment
 
-    def dispense_prescription(self, id_receta: int) -> Dict[str, Any]:
+    def dispense_prescription(
+        self,
+        id_receta: int,
+        metodo_pago: str = "Efectivo",
+        creado_por: Optional[str] = None,
+    ) -> Dict[str, Any]:
         prescription = self._select(
             "recetas", {"select": "*", "id": f"eq.{id_receta}", "limit": "1"}
         )
@@ -2523,7 +2552,14 @@ class SupabaseRepository(BaseRepository):
             {"estado": "completed", "estado_farmacia": "dispensed"},
         )
         self._audit("prescription_dispensed", "recetas", id_receta, "Medicamentos entregados")
-        return next(item for item in self.list_recetas() if int(item["id"]) == int(id_receta))
+        # Return the prescription with basic info
+        return {
+            "id": id_receta,
+            "id_cita": row.get("id_cita"),
+            "estado": "dispensed",
+            "total": row.get("total"),
+            "id_consulta": row.get("id_consulta"),
+        }
 
     def list_recetas(self) -> List[Dict[str, Any]]:
         recetas = self._select("recetas", {"select": "*", "order": "id.desc"})
@@ -2547,6 +2583,14 @@ class SupabaseRepository(BaseRepository):
                 "diagnostico": (appointment.get("consultation") or {}).get("diagnostico"),
                 "items": by_prescription.get(int(prescription["id"]), []),
             }
+            # Map estado -> status para frontend
+            raw = prescription.get("estado", "")
+            if raw == "pendiente" or raw == "pending":
+                row["status"] = "pending"
+            elif raw == "dispensado" or raw == "dispensed":
+                row["status"] = "dispensed"
+            else:
+                row["status"] = raw or ""
             results.append(row)
         return results
 
@@ -2747,4 +2791,11 @@ class SupabaseRepository(BaseRepository):
 
     @staticmethod
     def _triedad_dict(row: Dict[str, Any]) -> Dict[str, Any]:
-        return {**row, "analysis": json.loads(row.get("analisis_json") or "{}")}
+        data = {**row, "analysis": json.loads(row.get("analisis_json") or "{}")}
+        # Aliases para compatibilidad con frontend
+        data["predicted_systolic"] = data.get("sistolica_predicha")
+        data["estimated_attention_minutes"] = data.get("minutos_estimados")
+        data["risk_score"] = data.get("puntuacion_riesgo")
+        data["risk_label"] = data.get("etiqueta_riesgo")
+        data["decision_summary"] = data.get("resumen_decision")
+        return data
