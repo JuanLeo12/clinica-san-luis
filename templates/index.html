@@ -269,7 +269,7 @@
                 <label>Fecha nac.<input name="birth_date" type="date" readonly /></label>
                 <label>Edad<input name="age" min="18" max="90" type="number" readonly /></label>
                 <label>Sexo<input name="sex" readonly value="No especificado" /></label>
-                <label>Rol<select name="role" required><option value="doctor">Medico</option><option value="reception">Recepcionista</option><option value="triage">Enfermera</option><option value="cashier">Cajero</option><option value="pharmacy">Farmaceutico</option></select></label>
+                <label>Rol<select name="role" required><option value="medico">Medico</option><option value="caja">Caja</option><option value="recepcion">Recepcion</option><option value="farmacia">Farmacia</option><option value="admin">Admin</option></select></label>
                 <label class="worker-specialty-field">Especialidad<select name="specialty"></select></label>
                 <label>Telefono<input name="phone" inputmode="numeric" maxlength="9" pattern="[0-9]{9}" required /></label>
                 <label>Usuario<input name="username" placeholder="Usuario para acceso" required /></label>
@@ -293,7 +293,7 @@
                 <input name="id" type="hidden" />
                 <label>Nombre<input name="name" required /></label>
                 <label>Piso<input name="floor" required /></label>
-                <label class="wide">Equipamiento<input name="equipment" required /></label>
+                <label class="wide">Tipo<select name="tipo" required><option value="">Seleccionar...</option><option value="Medicina General">Medicina General</option><option value="Pediatria">Pediatria</option><option value="Cardiologia">Cardiologia</option><option value="Dermatologia">Dermatologia</option><option value="Ginecologia">Ginecologia</option><option value="Traumatologia">Traumatologia</option><option value="Oftalmologia">Oftalmologia</option></select></label>
                 <div class="form-actions wide">
                   <button class="secondary-button" data-clear-form="consultorio-form" type="button">Limpiar</button>
                   <button class="primary-button" type="submit">Guardar</button>
@@ -463,3 +463,5 @@
     <script src="{{ url_for('static', filename='app.js') }}?v=20250623" defer></script>
   </body>
 </html>
+
+

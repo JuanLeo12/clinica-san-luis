@@ -64,10 +64,19 @@ DEFAULT_USERS = [
     {"id": 1, "nombre_usuario": "admin", "contrasena": "admin123", "nombre_completo": "Administrador", "rol": "admin"},
     {"id": 2, "nombre_usuario": "recep", "contrasena": "recep123", "nombre_completo": "Maria Lopez", "rol": "reception"},
     {"id": 3, "nombre_usuario": "caja", "contrasena": "caja123", "nombre_completo": "Carlos Perez", "rol": "cashier"},
-    {"id": 4, "nombre_usuario": "triedad", "contrasena": "triedad123", "nombre_completo": "Ana Torres", "rol": "triedad"},
-    {"id": 5, "nombre_usuario": "doctor", "contrasena": "doctor123", "nombre_completo": "Dr. Roberto Silva", "rol": "doctor"},
-    {"id": 6, "nombre_usuario": "farmacia", "contrasena": "farm123", "nombre_completo": "Laura Gomez", "rol": "pharmacy"},
+    {"id": 4, "nombre_usuario": "doc1", "contrasena": "doc1123", "nombre_completo": "Dr. Roberto Silva", "rol": "doctor"},
+    {"id": 5, "nombre_usuario": "farmacia", "contrasena": "farm123", "nombre_completo": "Laura Gomez", "rol": "pharmacy"},
 ]
+
+# Mapeo de roles nuevos a nombres de vista para compatibilidad
+ROLE_VIEW_MAP = {
+    "medico": "doctor",
+    "caja": "cashier",
+    "recepcion": "reception",
+    "farmacia": "pharmacy",
+    "admin": "admin"
+}
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -393,7 +402,7 @@ class SQLiteRepository(BaseRepository):
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT NOT NULL,
                     floor TEXT,
-                    equipment TEXT,
+                    tipo TEXT,
                     activo INTEGER DEFAULT 1,
                     fecha_creacion TEXT NOT NULL
                 );
@@ -424,7 +433,7 @@ class SQLiteRepository(BaseRepository):
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT NOT NULL,
                     floor TEXT,
-                    equipment TEXT,
+                    tipo TEXT,
                     activo INTEGER DEFAULT 1,
                     fecha_creacion TEXT NOT NULL
                 );
@@ -455,7 +464,7 @@ class SQLiteRepository(BaseRepository):
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT NOT NULL,
                     floor TEXT,
-                    equipment TEXT,
+                    tipo TEXT,
                     activo INTEGER DEFAULT 1,
                     fecha_creacion TEXT NOT NULL
                 );
@@ -532,14 +541,14 @@ class SQLiteRepository(BaseRepository):
             if conn.execute("SELECT COUNT(*) FROM consultorios").fetchone()[0] == 0:
                 conn.executemany(
                     """
-                    INSERT INTO consultorios (nombre, floor, equipment, activo, fecha_creacion)
-                    VALUES (:nombre, :floor, :equipment, 1, :fecha_creacion)
+                    INSERT INTO consultorios (nombre, floor, tipo, activo, fecha_creacion)
+                    VALUES (:nombre, :floor, :tipo, 1, :fecha_creacion)
                     """,
                     [
-                        {"nombre": "C-101", "floor": "Piso 1", "equipment": "Camilla, tensiometro, PC", "fecha_creacion": utc_now()},
-                        {"nombre": "C-102", "floor": "Piso 1", "equipment": "Pediatria, balanza pediatrica", "fecha_creacion": utc_now()},
-                        {"nombre": "C-201", "floor": "Piso 2", "equipment": "ECG, monitor cardiaco", "fecha_creacion": utc_now()},
-                        {"nombre": "Triedad 01", "floor": "Piso 1", "equipment": "IoT signos vitales, oximetro", "fecha_creacion": utc_now()},
+                        {"nombre": "C-101", "floor": "Piso 1", "tipo": "Camilla, tensiometro, PC", "fecha_creacion": utc_now()},
+                        {"nombre": "C-102", "floor": "Piso 1", "tipo": "Pediatria, balanza pediatrica", "fecha_creacion": utc_now()},
+                        {"nombre": "C-201", "floor": "Piso 2", "tipo": "ECG, monitor cardiaco", "fecha_creacion": utc_now()},
+                        {"nombre": "Triedad 01", "floor": "Piso 1", "tipo": "IoT signos vitales, oximetro", "fecha_creacion": utc_now()},
                     ],
                 )
             if conn.execute("SELECT COUNT(*) FROM medicamentos").fetchone()[0] == 0:
@@ -1008,7 +1017,10 @@ class SQLiteRepository(BaseRepository):
             ],
         )
 
-        self._backfill_transacciones(conn)
+        # Only backfill transactions if none exist yet to avoid duplicates
+        existing_transacciones = conn.execute("SELECT COUNT(*) FROM transacciones").fetchone()[0]
+        if existing_transacciones == 0:
+            self._backfill_transacciones(conn)
         prescription = conn.execute(
             """
             SELECT pr.*, a.ticket, p.documento AS documento_paciente,
@@ -1895,17 +1907,17 @@ class SQLiteRepository(BaseRepository):
     def create_consultorio(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         nombre = _required_text(payload.get("nombre"), "Nombre")
         floor = _required_text(payload.get("floor"), "Piso")
-        equipment = _required_text(payload.get("equipment"), "Equipamiento")
+        tipo = _required_text(payload.get("tipo"), "Equipamiento")
         with self._connect() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO consultorios (nombre, floor, equipment, activo, fecha_creacion)
+                INSERT INTO consultorios (nombre, floor, tipo, activo, fecha_creacion)
                 VALUES (?, ?, ?, 1, ?)
                 """,
                 (
                     nombre,
                     floor,
-                    equipment,
+                    tipo,
                     utc_now(),
                 ),
             )
@@ -1922,18 +1934,18 @@ class SQLiteRepository(BaseRepository):
         data = {**current, **payload}
         nombre = _required_text(data.get("nombre"), "Nombre")
         floor = _required_text(data.get("floor"), "Piso")
-        equipment = _required_text(data.get("equipment"), "Equipamiento")
+        tipo = _required_text(data.get("tipo"), "Equipamiento")
         with self._connect() as conn:
             conn.execute(
                 """
                 UPDATE consultorios
-                SET nombre = ?, floor = ?, equipment = ?
+                SET nombre = ?, floor = ?, tipo = ?
                 WHERE id = ?
                 """,
                 (
                     nombre,
                     floor,
-                    equipment,
+                    tipo,
                     consultorio_id,
                 ),
             )
@@ -2738,11 +2750,20 @@ class SupabaseRepository(BaseRepository):
 
     def create_worker(self, payload):
         conn = self._connect()
+        username = payload.get('username')
+        password = payload.get('password')
+        rol = payload.get('rol', 'recepcion')
+        nombre = payload.get('nombre', '')
+        apellido = payload.get('apellido', '')
+
+        # Map role to view name for usuarios table
+        view_rol = ROLE_VIEW_MAP.get(rol, rol)
+
         data = {
             'documento': payload.get('documento'),
-            'nombre': payload.get('nombre'),
-            'apellido': payload.get('apellido'),
-            'rol': payload.get('rol'),
+            'nombre': nombre,
+            'apellido': apellido,
+            'rol': rol,
             'specialty': payload.get('specialty'),
             'telefono': payload.get('telefono'),
             'activo': 1,
@@ -2751,7 +2772,23 @@ class SupabaseRepository(BaseRepository):
         conn.execute('''INSERT INTO trabajadores (documento, nombre, apellido, rol, specialty, telefono, activo, fecha_creacion)
             VALUES (:documento, :nombre, :apellido, :rol, :specialty, :telefono, :activo, :fecha_creacion)''', data)
         conn.commit()
-        return self.get_worker(conn.lastrowid)
+        worker_id = conn.lastrowid
+
+        # Also create user in usuarios table for login
+        if username and password:
+            user_data = {
+                'nombre_usuario': username,
+                'contrasena': password,
+                'nombre_completo': f"{nombre} {apellido}",
+                'rol': view_rol,
+                'activo': 1,
+                'fecha_creacion': utc_now()
+            }
+            conn.execute('''INSERT INTO usuarios (nombre_usuario, contrasena, nombre_completo, rol, activo, fecha_creacion)
+                VALUES (:nombre_usuario, :contrasena, :nombre_completo, :rol, :activo, :fecha_creacion)''', user_data)
+            conn.commit()
+
+        return self.get_worker(worker_id)
 
     def get_worker(self, worker_id):
         conn = self._connect()
@@ -2778,9 +2815,9 @@ class SupabaseRepository(BaseRepository):
 
     def create_consultorio(self, payload):
         conn = self._connect()
-        data = {'nombre': payload.get('nombre'), 'floor': payload.get('floor'), 'equipment': payload.get('equipment'), 
+        data = {'nombre': payload.get('nombre'), 'floor': payload.get('floor'), 'tipo': payload.get('tipo'), 
                'activo': 1, 'fecha_creacion': utc_now()}
-        conn.execute('INSERT INTO consultorios (nombre, floor, equipment, activo, fecha_creacion) VALUES (:nombre, :floor, :equipment, :activo, :fecha_creacion)', data)
+        conn.execute('INSERT INTO consultorios (nombre, floor, tipo, activo, fecha_creacion) VALUES (:nombre, :floor, :tipo, :activo, :fecha_creacion)', data)
         conn.commit()
         return dict(conn.execute('SELECT * FROM consultorios WHERE id = ?', (conn.lastrowid,)).fetchone())
 
@@ -2863,3 +2900,5 @@ class SupabaseRepository(BaseRepository):
         data["risk_label"] = data.get("etiqueta_riesgo")
         data["decision_summary"] = data.get("resumen_decision")
         return data
+
+

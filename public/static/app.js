@@ -19,11 +19,11 @@ const appState = {
 
 const ROLE = {
   admin: ["reception", "cashier", "triage", "doctor", "pharmacy", "admin"],
-  reception: ["reception"],
-  cashier: ["cashier"],
+  recepcion: ["reception"],
+  caja: ["cashier"],
   triage: ["triage"],
-  doctor: ["doctor"],
-  pharmacy: ["pharmacy"],
+  medico: ["doctor"],
+  farmacia: ["pharmacy"],
 };
 
 const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Yape/Plin", "Transferencia"];
@@ -145,11 +145,11 @@ function roleName(role) {
   return (
     {
       admin: "Administrador",
-      reception: "Recepcion",
-      cashier: "Caja",
+      recepcion: "Recepcion",
+      caja: "Caja",
       triage: "Enfermeria",
-      doctor: "Medico",
-      pharmacy: "Farmacia",
+      medico: "Medico",
+      farmacia: "Farmacia",
     }[role] || role
   );
 }
@@ -2061,8 +2061,8 @@ document.addEventListener("click", async (event) => {
         if (form) {
           form.elements.id.value = patient.id;
           form.elements.document.value = patient.document || "";
-          form.elements.first_name.value = patient.name ? patient.name.split(" ")[0] : "";
-          form.elements.last_name.value = patient.name ? patient.name.split(" ").slice(1).join(" ") : "";
+          form.elements.first_name.value = patient.first_name || patient.name || "";
+          form.elements.last_name.value = patient.last_name || "";
           form.elements.birth_date.value = patient.birth_date || "";
           form.elements.age.value = patient.age || "";
           form.elements.sex.value = patient.sex || patient.gender || "";
@@ -2712,7 +2712,7 @@ function updateWorkerSpecialtyState() {
   if (!form) return;
   const field = form.querySelector(".worker-specialty-field");
   const specialty = form.elements.specialty;
-  const isDoctor = form.elements.role.value === "doctor";
+  const isDoctor = form.elements.role.value === "medico";
   const currentValue = specialty.value;
   specialty.innerHTML = workerSpecialtyOptions();
   specialty.disabled = !isDoctor;
@@ -2745,7 +2745,7 @@ function validateClinicForm(form) {
   }
   if (
     form.id === "worker-form" &&
-    form.elements.role.value === "doctor" &&
+    form.elements.role.value === "medico" &&
     !form.elements.specialty.value
   ) {
     throw new Error("Seleccione especialidad para el medico.");
@@ -3066,3 +3066,10 @@ function showPendingToast() {
   localStorage.removeItem("clinic_toast");
   showToast(pendingToast, "success");
 }
+
+
+
+
+
+
+
