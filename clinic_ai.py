@@ -342,7 +342,7 @@ class ClinicalML:
         self.decision_tree.fit(rows, priority_labels)
 
     def analyze(self, vitals: Dict[str, Any], patient: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        # Soportar nombres en español e inglés
+        # Soportar nombres en espaÃƒÆ’Ã‚Â±ol e inglÃƒÆ’Ã‚Â©s
         def get_float(*keys, default=0.0):
             for k in keys:
                 v = vitals.get(k)
@@ -374,7 +374,16 @@ class ClinicalML:
         else:
             risk_label = "Bajo"
 
+        if not flags:
+            # Signs are normal - override ML decision to be clinically consistent
+            if priority in ("Emergencia", "Urgente"):
+                priority = "Rutina"
+            if risk_label != "Bajo":
+                risk_label = "Bajo"
+                risk_probability = min(risk_probability, 0.35)
+
         spo2_valor = vitals.get("spO2") or vitals.get("spo2") or 98
+
         spo2_penalty = max(0, 95 - spo2_valor) * 3
 
         temp_penalty = max(0, vitals.get("temperature", 36.5) - 37.5) * 8
@@ -438,13 +447,13 @@ class ClinicalML:
         }
 
     def dashboard_metrics(self, appointments: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
-        # Métricas operativas reales de la clínica
+        # MÃƒÆ’Ã‚Â©tricas operativas reales de la clÃƒÆ’Ã‚Â­nica
         total_appointments = len(appointments)
         paid_appointments = [a for a in appointments if a.get("payment_status") == "paid"]
         completed_appointments = [a for a in appointments if a.get("status") == "completed"]
         waiting_appointments = [a for a in appointments if a.get("consultation_status") == "waiting"]
 
-        # Distribución por especialidad
+        # DistribuciÃƒÆ’Ã‚Â³n por especialidad
         specialty_counts: Dict[str, int] = {}
         for apt in appointments:
             spec = str(apt.get("specialty", {}).get("name") or "Sin especialidad")
@@ -456,13 +465,13 @@ class ClinicalML:
             for apt in paid_appointments
         )
 
-        # Distribución de estados
+        # DistribuciÃƒÆ’Ã‚Â³n de estados
         status_counts = {"pending": 0, "paid": 0, "in_triage": 0, "waiting": 0, "in_progress": 0, "completed": 0}
         for apt in appointments:
             status = str(apt.get("payment_status") or "pending")
             status_counts[status] = status_counts.get(status, 0) + 1
 
-        # Métricas de triage ML
+        # MÃƒÆ’Ã‚Â©tricas de triage ML
         triage_rows = [
             appointment.get("triage")
             for appointment in appointments
@@ -540,7 +549,7 @@ class ClinicalML:
         elif total_revenue > 0:
             insight = "Ingresos registrados: S/ " + str(round(total_revenue, 2))
         else:
-            insight = "Sistema operativo. Sin datos de triage reales aún."
+            insight = "Sistema operativo. Sin datos de triage reales aÃƒÆ’Ã‚Âºn."
 
         # Crear datos de barras para especialidades
         specialty_bar = [
@@ -548,7 +557,7 @@ class ClinicalML:
             for spec, count in sorted(specialty_counts.items(), key=lambda x: -x[1])
         ][:8]
 
-        # Crear datos de evolución temporal (simulado por ahora)
+        # Crear datos de evoluciÃƒÆ’Ã‚Â³n temporal (simulado por ahora)
         time_series = []
         if triage_rows:
             for i, t in enumerate(triage_rows[-10:]):
@@ -559,7 +568,7 @@ class ClinicalML:
                 })
 
         return {
-            # Métricas operativas reales
+            # MÃƒÆ’Ã‚Â©tricas operativas reales
             "operational": {
                 "total_appointments": total_appointments,
                 "paid_count": len(paid_appointments),
@@ -572,7 +581,7 @@ class ClinicalML:
                     for label in ["pending", "paid", "waiting", "in_progress", "completed"]
                 ],
             },
-            # Métricas ML theory
+            # MÃƒÆ’Ã‚Â©tricas ML theory
             "priority_distribution": [
                 {"label": label, "value": priority_counts.get(label, 0)}
                 for label in priority_order
@@ -642,11 +651,11 @@ class ClinicalML:
     def _decision_summary(flags: Sequence[str], priority: str, risk_label: str) -> str:
         if flags:
             return f"{priority} por {', '.join(flags[:3])}. Riesgo {risk_label.lower()}."
-        return f"{priority}. Signos dentro de rango operativo. Riesgo {risk_label.lower()}."
+        return f"{priority}. Signos dentro de rangos normales. Riesgo {risk_label.lower()}."
 
     def confusion_matrix_data(self) -> List[Dict[str, Any]]:
-        """Genera datos de matriz de confusión para visualización (como parte2.py)."""
-        # Simular matriz de confusión basada en datos de triage
+        """Genera datos de matriz de confusiÃƒÆ’Ã‚Â³n para visualizaciÃƒÆ’Ã‚Â³n (como parte2.py)."""
+        # Simular matriz de confusiÃƒÆ’Ã‚Â³n basada en datos de triage
         classes = ["Emergencia", "Urgente", "Preferente", "Rutina"]
         # Valores simulados representing predictions vs actual
         matrix = [
@@ -658,8 +667,8 @@ class ClinicalML:
         return matrix
 
     def roc_curve_data(self) -> List[Dict[str, float]]:
-        """Genera puntos de curva ROC para visualización (como parte2.py)."""
-        # Curva ROC simulada para regresión logística
+        """Genera puntos de curva ROC para visualizaciÃƒÆ’Ã‚Â³n (como parte2.py)."""
+        # Curva ROC simulada para regresiÃƒÆ’Ã‚Â³n logÃƒÆ’Ã‚Â­stica
         points = [
             {"fpr": 0.0, "tpr": 0.0},
             {"fpr": 0.05, "tpr": 0.35},
@@ -675,9 +684,12 @@ class ClinicalML:
         return points
 
     def algorithm_comparison(self) -> List[Dict[str, Any]]:
-        """Genera comparación de algoritmos (como parte2.py)."""
+        """Genera comparaciÃƒÆ’Ã‚Â³n de algoritmos (como parte2.py)."""
         return [
-            {"name": "Árbol de Decisión", "accuracy": 0.847},
+            {"name": "ÃƒÆ’Ã‚Ârbol de DecisiÃƒÆ’Ã‚Â³n", "accuracy": 0.847},
             {"name": "Random Forest", "accuracy": 0.891},
-            {"name": "Regresión Logística", "accuracy": 0.823},
+            {"name": "RegresiÃƒÆ’Ã‚Â³n LogÃƒÆ’Ã‚Â­stica", "accuracy": 0.823},
         ]
+
+
+

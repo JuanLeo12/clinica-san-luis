@@ -879,15 +879,15 @@ def _normalize_vitals(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     def blood_pressure(default_systolic: int = 120, default_diastolic: int = 80) -> tuple[int, int]:
         systolic = int(
-            round(number("blood_pressure_systolic", "systolic", "sistolica", default=default_systolic))
+            round(number("blood_pressure_systolic", "blood_pressure_sistolica", "systolic", "sistolica", default=default_systolic))
         )
         diastolic = int(
-            round(number("blood_pressure_diastolic", "diastolic", "diastolica", default=default_diastolic))
+            round(number("blood_pressure_diastolic", "blood_pressure_diastolica", "diastolic", "diastolica", default=default_diastolic))
         )
         combined = payload.get("blood_pressure") or payload.get("pressure") or payload.get("presion")
         if combined and (
-            payload.get("blood_pressure_systolic") in {None, ""}
-            or payload.get("blood_pressure_diastolic") in {None, ""}
+            payload.get("blood_pressure_systolic") in {None, ""} or payload.get("blood_pressure_sistolica") in {None, ""}
+            or payload.get("blood_pressure_diastolic") in {None, ""} or payload.get("blood_pressure_diastolica") in {None, ""}
         ):
             clean_value = str(combined).replace("mmHg", "").replace(" ", "")
             separator = "/" if "/" in clean_value else "-"
@@ -917,6 +917,10 @@ app = create_app()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(os.getenv("PORT", "5000")))
+
+
+
+
 
 
 

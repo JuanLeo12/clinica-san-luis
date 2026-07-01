@@ -2120,7 +2120,7 @@ document.addEventListener("submit", async (event) => {
     } else if (form.id === "consultation-form") {
       if (!selectedConsultationId) throw new Error("Seleccione un paciente");
       const data = formData(form);
-      data.prescription_items = prescriptionItems();
+      data.receta_items = prescriptionItems();
       await apiPost(`/api/consultations/${selectedConsultationId}`, data);
       selectedConsultationId = null;
       form.reset();
@@ -2236,7 +2236,7 @@ function addMedicineRow(item = {}) {
     <div class="medicine-row">
       <div class="field-group">
         <label>Medicamento</label>
-        <select name="medicine">${options}</select>
+        <select name="medicamento">${options}</select>
       </div>
       <div class="field-group">
         <label>Dosis (por toma)</label>
@@ -2252,7 +2252,7 @@ function addMedicineRow(item = {}) {
       </div>
       <div class="field-group">
         <label>Precio und. (S/)</label>
-        <input name="unit_price" step="0.01" type="number" value="${item.unit_price || medicationPrice(appState.medications[0])}" placeholder="0.00">
+        <input name="precio_unitario" step="0.01" type="number" value="${item.unit_price || medicationPrice(appState.medications[0])}" placeholder="0.00">
       </div>
       <button class="danger-button" data-remove-medicine="1" type="button">X</button>
     </div>
@@ -2397,7 +2397,7 @@ function consultationMlSummary(item) {
     <span>Prioridad</span><strong>${escapeHtml(triage.priority)}</strong>
     <span>Riesgo</span><strong>${escapeHtml(triage.risk_label)}</strong>
     <span>Signos</span><strong>${triage.temperature} C - FC ${triage.heart_rate} - SpO2 ${triage.spo2}% - PA ${triage.systolic}/${triage.diastolic}</strong>
-    <span>ML</span><strong>PA esperada ${predictedPA ?? "--"} - Consulta ${estMinutes ?? "--"} min</strong>
+    <span>IA</span><strong>PA esperada ${predictedPA ?? "--"} - Consulta ${estMinutes ?? "--"} min</strong>
     <span>Decision</span><strong>${escapeHtml(triage.decision_summary)}</strong>
   </div>
   <div class="ml-result-grid compact-ml">
@@ -3066,6 +3066,13 @@ function showPendingToast() {
   localStorage.removeItem("clinic_toast");
   showToast(pendingToast, "success");
 }
+
+
+
+
+
+
+
 
 
 

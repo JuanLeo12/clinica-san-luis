@@ -336,12 +336,12 @@ class SQLiteRepository(BaseRepository):
                 CREATE TABLE IF NOT EXISTS receta_items (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     id_receta INTEGER NOT NULL REFERENCES recetas(id) ON DELETE CASCADE,
-                    medicamento TEXT NOT NULL,
+                    medicina TEXT NOT NULL,
                     dosis TEXT NOT NULL,
                     frecuencia TEXT NOT NULL,
                     dias INTEGER NOT NULL,
                     cantidad INTEGER NOT NULL,
-                    unit_precio REAL NOT NULL
+                    precio_unitario REAL NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS transacciones (
@@ -939,7 +939,7 @@ class SQLiteRepository(BaseRepository):
             ).fetchone()
             if existing:
                 return int(existing["id"])
-            total = sum(float(item["unit_precio"]) * int(item["cantidad"]) for item in items)
+            total = sum(float(item["precio_unitario"]) * int(item["cantidad"]) for item in items)
             cursor = conn.execute(
                 """
                 INSERT INTO recetas (
@@ -960,9 +960,9 @@ class SQLiteRepository(BaseRepository):
             conn.executemany(
                 """
                 INSERT INTO receta_items (
-                    id_receta, medicamento, dosis, frecuencia, dias, cantidad, unit_precio
+                    id_receta, medicina, dosis, frecuencia, dias, cantidad, precio_unitario
                 )
-                VALUES (:id_receta, :medicamento, :dosis, :frecuencia, :dias, :cantidad, :unit_precio)
+                VALUES (:id_receta, :medicina, :dosis, :frecuencia, :dias, :cantidad, :precio_unitario)
                 """,
                 [dict(item, id_receta=id_receta) for item in items],
             )
@@ -980,7 +980,7 @@ class SQLiteRepository(BaseRepository):
                     "frecuencia": "Cada 24 horas",
                     "dias": 5,
                     "cantidad": 5,
-                    "unit_precio": 1.80,
+                    "precio_unitario": 1.80,
                 },
                 {
                     "medicamento": "Paracetamol 500 mg",
@@ -988,7 +988,7 @@ class SQLiteRepository(BaseRepository):
                     "frecuencia": "Si hay dolor",
                     "dias": 3,
                     "cantidad": 6,
-                    "unit_precio": 1.50,
+                    "precio_unitario": 1.50,
                 },
             ],
         )
@@ -1004,7 +1004,7 @@ class SQLiteRepository(BaseRepository):
                     "frecuencia": "Cada 8 horas",
                     "dias": 3,
                     "cantidad": 9,
-                    "unit_precio": 1.50,
+                    "precio_unitario": 1.50,
                 },
                 {
                     "medicamento": "Suero oral",
@@ -1012,7 +1012,7 @@ class SQLiteRepository(BaseRepository):
                     "frecuencia": "Segun tolerancia",
                     "dias": 2,
                     "cantidad": 2,
-                    "unit_precio": 4.50,
+                    "precio_unitario": 4.50,
                 },
             ],
         )
@@ -1509,19 +1509,19 @@ class SQLiteRepository(BaseRepository):
                 normalized_items = []
                 for item in items:
                     cantidad = max(1, int(item.get("cantidad") or 1))
-                    unit_precio = max(0.0, float(item.get("unit_precio") or 0))
+                    precio_unitario = max(0.0, float(item.get("precio_unitario") or item.get("unit_price") or 0))
                     dias = max(1, int(item.get("dias") or 1))
                     normalized_items.append(
                         {
-                            "medicamento": str(item.get("medicamento") or "").strip(),
+                            "medicina": str(item.get("medicamento") or "").strip(),
                             "dosis": str(item.get("dosis") or "").strip(),
                             "frecuencia": str(item.get("frecuencia") or "").strip(),
                             "dias": dias,
                             "cantidad": cantidad,
-                            "unit_precio": unit_precio,
+                            "precio_unitario": precio_unitario,
                         }
                     )
-                    total += cantidad * unit_precio
+                    total += cantidad * precio_unitario
 
                 cursor = conn.execute(
                     """
@@ -1534,9 +1534,9 @@ class SQLiteRepository(BaseRepository):
                 conn.executemany(
                     """
                     INSERT INTO receta_items (
-                        id_receta, medicamento, dosis, frecuencia, dias, cantidad, unit_precio
+                        id_receta, medicina, dosis, frecuencia, dias, cantidad, precio_unitario
                     )
-                    VALUES (:id_receta, :medicamento, :dosis, :frecuencia, :dias, :cantidad, :unit_precio)
+                    VALUES (:id_receta, :medicina, :dosis, :frecuencia, :dias, :cantidad, :precio_unitario)
                     """,
                     [dict(item, id_receta=id_receta) for item in normalized_items],
                 )
@@ -2565,7 +2565,7 @@ class SupabaseRepository(BaseRepository):
         id_receta = None
         if receta_items:
             total = sum(
-                max(1, int(item.get("cantidad") or 1)) * max(0.0, float(item.get("unit_precio") or 0))
+                max(1, int(item.get("cantidad") or 1)) * max(0.0, float(item.get("precio_unitario") or item.get("unit_price") or 0))
                 for item in receta_items
             )
             prescription = self._insert(
@@ -2584,12 +2584,12 @@ class SupabaseRepository(BaseRepository):
                     "receta_items",
                     {
                         "id_receta": id_receta,
-                        "medicamento": str(item.get("medicamento") or ""),
+                        "medicina": str(item.get("medicamento") or ""),
                         "dosis": str(item.get("dosis") or ""),
                         "frecuencia": str(item.get("frecuencia") or ""),
                         "dias": max(1, int(item.get("dias") or 1)),
                         "cantidad": max(1, int(item.get("cantidad") or 1)),
-                        "unit_precio": max(0.0, float(item.get("unit_precio") or 0)),
+                        "precio_unitario": max(0.0, float(item.get("precio_unitario") or item.get("unit_price") or 0)),
                     },
                 )
 
@@ -2900,5 +2900,11 @@ class SupabaseRepository(BaseRepository):
         data["risk_label"] = data.get("etiqueta_riesgo")
         data["decision_summary"] = data.get("resumen_decision")
         return data
+
+
+
+
+
+
 
 
