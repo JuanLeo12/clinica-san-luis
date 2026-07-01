@@ -376,7 +376,7 @@ class ClinicalML:
             }
 
         shuffled = rows[:]
-        random.Random(42).shuffle(shuffled)
+        random.shuffle(shuffled)
         split_index = max(1, int(len(shuffled) * 0.8))
         train_rows = shuffled[:split_index]
         test_rows = shuffled[split_index:] or shuffled[-1:]
