@@ -481,16 +481,15 @@ def create_app() -> Flask:
 
     @app.route("/api/ml/explain", methods=["GET"])
     def explain_ml():
-        return jsonify(ml_engine.model_info()), 200
+        return jsonify(ml_engine.predictive_report()), 200
 
     @app.route("/api/ml/evaluate", methods=["GET"])
     def evaluate_ml():
-        repo = app.config["repo"]
-        return jsonify(ml_engine.dashboard_metrics(repo.snapshot().get("appointments", []))), 200
+        return jsonify(ml_engine.predictive_report()), 200
 
     @app.route("/api/ml/dashboard", methods=["GET"])
     def ml_dashboard():
-        return jsonify(ml_engine.dashboard_metrics(repo.snapshot().get("appointments", []))), 200
+        return jsonify(ml_engine.predictive_report()), 200
 
     @app.route("/api/dni/<dni>", methods=["GET"])
     def lookup_dni(dni: str):

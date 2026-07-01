@@ -1454,6 +1454,23 @@ class SQLiteRepository(BaseRepository):
         nombre_medico = str(payload.get("nombre_medico") or "").strip()
         items = [item for item in payload.get("receta_items") or [] if item.get("medicamento")]
 
+        def _first_number(value: Any, default: float = 0.0) -> float:
+            if value is None:
+                return default
+            if isinstance(value, (int, float)):
+                return float(value)
+            text = str(value).strip().replace(",", ".")
+            if not text:
+                return default
+            try:
+                return float(text)
+            except ValueError:
+                match = re.search(r"-?\d+(?:\.\d+)?", text)
+                return float(match.group(0)) if match else default
+
+        def _normalize_int(value: Any, default: int = 1) -> int:
+            return max(1, int(round(_first_number(value, default))))
+
         if not diagnostico:
             raise ValueError("El diagnostico es obligatorio.")
 
@@ -1508,14 +1525,25 @@ class SQLiteRepository(BaseRepository):
             if items:
                 normalized_items = []
                 for item in items:
-                    cantidad = max(1, int(item.get("cantidad") or 1))
-                    precio_unitario = max(0.0, float(item.get("precio_unitario") or item.get("unit_price") or 0))
-                    dias = max(1, int(item.get("dias") or 1))
+                    dosis_raw = item.get("dosis") or item.get("dosage") or item.get("dose") or ""
+                    frecuencia_raw = item.get("frecuencia") or item.get("frequency") or item.get("cada") or ""
+                    dias_raw = item.get("dias") or item.get("days") or item.get("day") or 1
+                    cantidad_raw = item.get("cantidad") or item.get("quantity") or item.get("cant") or item.get("pill_count")
+                    precio_unitario = max(0.0, float(item.get("precio_unitario") or item.get("unit_price") or item.get("price") or 0))
+
+                    dosis = _normalize_int(dosis_raw, 1)
+                    dias = _normalize_int(dias_raw, 1)
+                    frecuencia_horas = _normalize_int(frecuencia_raw, 8)
+                    dosis_por_dia = max(1, int(round(24 / frecuencia_horas)))
+                    cantidad = _normalize_int(cantidad_raw, dosis * dosis_por_dia * dias)
+                    if not cantidad_raw:
+                        cantidad = dosis * dosis_por_dia * dias
+
                     normalized_items.append(
                         {
                             "medicina": str(item.get("medicamento") or "").strip(),
-                            "dosis": str(item.get("dosis") or "").strip(),
-                            "frecuencia": str(item.get("frecuencia") or "").strip(),
+                            "dosis": str(dosis_raw or "").strip(),
+                            "frecuencia": str(frecuencia_raw or "").strip(),
                             "dias": dias,
                             "cantidad": cantidad,
                             "precio_unitario": precio_unitario,

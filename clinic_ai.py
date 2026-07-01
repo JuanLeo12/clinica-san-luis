@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import csv
 import math
 import random
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 
@@ -275,6 +277,172 @@ class ClinicalML:
         self.logistic_regression = LogisticRegression()
         self.decision_tree = DecisionTreeClassifier()
         self._train()
+
+    @staticmethod
+    def _to_float(value: Any, default: float = 0.0) -> float:
+        if value is None:
+            return default
+        if isinstance(value, (int, float)):
+            return float(value)
+        text = str(value).strip().replace(",", ".")
+        if not text:
+            return default
+        try:
+            return float(text)
+        except ValueError:
+            return default
+
+    @staticmethod
+    def _safe_imc(row: Dict[str, Any]) -> float:
+        imc = ClinicalML._to_float(row.get("imc"), 0.0)
+        if imc > 0:
+            return imc
+        weight = ClinicalML._to_float(row.get("peso"), 0.0)
+        height = ClinicalML._to_float(row.get("altura"), 0.0)
+        if weight > 0 and height > 0:
+            height_m = height / 100.0
+            return weight / (height_m * height_m)
+        return 0.0
+
+    @staticmethod
+    def _regression_metrics(y_true: Sequence[float], y_pred: Sequence[float]) -> Dict[str, float]:
+        if not y_true:
+            return {"mae": 0.0, "rmse": 0.0, "r2": 0.0}
+        errors = [float(pred) - float(real) for real, pred in zip(y_true, y_pred)]
+        mae = sum(abs(error) for error in errors) / len(errors)
+        rmse = math.sqrt(sum(error * error for error in errors) / len(errors))
+        mean_true = sum(float(value) for value in y_true) / len(y_true)
+        ss_res = sum((float(real) - float(pred)) ** 2 for real, pred in zip(y_true, y_pred))
+        ss_tot = sum((float(real) - mean_true) ** 2 for real in y_true)
+        r2 = 1.0 - (ss_res / ss_tot if ss_tot else 0.0)
+        return {
+            "mae": round(mae, 3),
+            "rmse": round(rmse, 3),
+            "r2": round(r2, 3),
+        }
+
+    def _load_predictive_dataset(self) -> List[Dict[str, Any]]:
+        dataset_path = Path(__file__).resolve().parent / "triage_dataset.csv"
+        rows: List[Dict[str, Any]] = []
+        if not dataset_path.exists():
+            return rows
+
+        with dataset_path.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for raw in reader:
+                target = self._to_float(raw.get("minutos_estimados"), 0.0)
+                if target <= 0:
+                    continue
+                row = {
+                    "edad": self._to_float(raw.get("edad"), 0.0),
+                    "temperatura": self._to_float(raw.get("temperatura"), 0.0),
+                    "ritmo_cardiaco": self._to_float(raw.get("ritmo_cardiaco"), 0.0),
+                    "spo2": self._to_float(raw.get("spo2"), 0.0),
+                    "presion_sistolica": self._to_float(raw.get("presion_sistolica"), 0.0),
+                    "presion_diastolica": self._to_float(raw.get("presion_diastolica"), 0.0),
+                    "imc": self._safe_imc(raw),
+                    "minutos_estimados": target,
+                    "prioridad": str(raw.get("prioridad") or "").strip(),
+                    "riesgo_binario": self._to_float(raw.get("riesgo_binario"), 0.0),
+                }
+                rows.append(row)
+        return rows
+
+    def predictive_report(self) -> Dict[str, Any]:
+        feature_names = [
+            "edad",
+            "temperatura",
+            "ritmo_cardiaco",
+            "spo2",
+            "presion_sistolica",
+            "presion_diastolica",
+            "imc",
+        ]
+        rows = self._load_predictive_dataset()
+        if not rows:
+            return {
+                "algorithm": "Regresion lineal multiple",
+                "target": "minutos_estimados",
+                "feature_names": feature_names,
+                "split": {"train": 0, "test": 0},
+                "dataset": {"rows": 0},
+                "train_metrics": {"mae": 0.0, "rmse": 0.0, "r2": 0.0},
+                "test_metrics": {"mae": 0.0, "rmse": 0.0, "r2": 0.0},
+                "coefficients": [],
+                "equation": "Modelo no disponible.",
+                "train_predictions": [],
+                "test_predictions": [],
+                "insight": "No hay datos disponibles en triage_dataset.csv.",
+            }
+
+        shuffled = rows[:]
+        random.Random(42).shuffle(shuffled)
+        split_index = max(1, int(len(shuffled) * 0.8))
+        train_rows = shuffled[:split_index]
+        test_rows = shuffled[split_index:] or shuffled[-1:]
+
+        train_x = [[row[name] for name in feature_names] for row in train_rows]
+        train_y = [row["minutos_estimados"] for row in train_rows]
+        test_x = [[row[name] for name in feature_names] for row in test_rows]
+        test_y = [row["minutos_estimados"] for row in test_rows]
+
+        model = MultipleLinearRegression()
+        model.fit(train_x, train_y)
+
+        train_pred = [model.predict(row) for row in train_x]
+        test_pred = [model.predict(row) for row in test_x]
+
+        train_metrics = self._regression_metrics(train_y, train_pred)
+        test_metrics = self._regression_metrics(test_y, test_pred)
+
+        coefficients = [round(value, 4) for value in model.coefficients]
+        equation_terms = []
+        if coefficients:
+            equation_terms.append(f"{coefficients[0]:.3f}")
+            for name, coef in zip(feature_names, coefficients[1:]):
+                equation_terms.append(f"({coef:.3f} * {name})")
+        equation = " + ".join(equation_terms) if equation_terms else "Modelo no disponible."
+
+        if test_metrics["r2"] >= 0.75:
+            insight = "El modelo muestra buen ajuste para estimar el tiempo de atencion en base a variables clinicas numericas."
+        elif test_metrics["r2"] >= 0.5:
+            insight = "El modelo ofrece una aproximacion util, pero aun puede mejorarse con mas datos o depuracion de variables."
+        else:
+            insight = "El ajuste es bajo; revise calidad de datos o variables explicativas antes de confiar en la prediccion."
+
+        return {
+            "algorithm": "Regresion lineal multiple",
+            "target": "minutos_estimados",
+            "feature_names": feature_names,
+            "split": {
+                "train": len(train_rows),
+                "test": len(test_rows),
+                "train_ratio": 80,
+                "test_ratio": 20,
+            },
+            "dataset": {
+                "rows": len(rows),
+            },
+            "train_metrics": train_metrics,
+            "test_metrics": test_metrics,
+            "coefficients": coefficients,
+            "equation": equation,
+            "train_predictions": [
+                {
+                    "actual": round(actual, 2),
+                    "predicted": round(predicted, 2),
+                }
+                for actual, predicted in list(zip(train_y, train_pred))[:12]
+            ],
+            "test_predictions": [
+                {
+                    "actual": round(actual, 2),
+                    "predicted": round(predicted, 2),
+                }
+                for actual, predicted in list(zip(test_y, test_pred))[:20]
+            ],
+            "insight": insight,
+        }
 
     def _train(self) -> None:
         random.seed(42)

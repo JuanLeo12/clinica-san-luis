@@ -393,6 +393,18 @@ function renderDashboard() {
   renderVitals("dashboard-vitals", appState.latest_iot);
 }
 
+function queueAppointment(item) {
+  return `
+    <article class="queue-card">
+      <div>
+        <strong>${escapeHtml(item.ticket)}</strong>
+        <span>${escapeHtml(item.patient.full_name)} · ${escapeHtml(item.specialty.name)}</span>
+      </div>
+      ${statusLabel(item.status)}
+    </article>
+  `;
+}
+
 function renderReception() {
   // Preservar la selección actual antes de re-renderizar
   const specialtySelect = document.getElementById("specialty-select");
@@ -1211,6 +1223,33 @@ function renderAdminTransactions() {
   );
 }
 
+function renderTransactions(items) {
+  if (!items || !items.length) return empty("Sin transacciones registradas");
+
+  return [...items]
+    .slice()
+    .reverse()
+    .map((item) => {
+      const amount = item.amount !== undefined ? item.amount : (item.total || 0);
+      const typeLabel = item._type || (item.module === "pharmacy" ? "Farmacia" : "Caja");
+      const code = item.transaction_code || item.codigo_transaccion || item.ticket || "TX";
+      const patient = item.patient_name || item.nombre_paciente || item.patient?.full_name || "-";
+      const concept = item.concept || item.concepto || "-";
+      const createdAt = item.created_at || item.fecha_creacion || "";
+      return `
+        <article class="queue-card">
+          <div>
+            <strong>${escapeHtml(code)} - ${escapeHtml(patient)}</strong>
+            <span>${escapeHtml(typeLabel)} · ${escapeHtml(concept)}</span>
+            <small>${formatDateTime(createdAt)}</small>
+          </div>
+          <strong>${money(amount)}</strong>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 // ==========================
 // ML Panel (Interactive)
 // ==========================
@@ -1254,14 +1293,6 @@ function bindMlButtons() {
     });
   }
 
-  // Botón Comparar Algoritmos
-  const btnComparar = document.getElementById("btn-ml-comparar");
-  if (btnComparar) {
-    btnComparar.addEventListener("click", () => {
-      mlCompararAlgoritmos();
-    });
-  }
-
   // Botón Mostrar Configuración
   const btnMostrar = document.getElementById("btn-ml-mostrar");
   if (btnMostrar) {
@@ -1279,43 +1310,96 @@ function bindMlButtons() {
   }
 }
 
+function getPredictiveReport() {
+  return appState.mlInfo || appState.mlDashboard || appState.mlEvaluate || null;
+}
+
 function renderML() {
-  // Use existing CSV data if already loaded (stable, doesn't regenerate)
-  // Only load if no data exists yet
   if (mlDatasetData.length === 0 && !mlDatasetLoaded) {
     loadMlDataset().then(() => {
-      // After load, render preview
       showDatasetPreview();
+      renderMlWorkspaceSummary();
     });
   }
-
-  const columns = getDatasetColumns();
-  const listboxX = document.getElementById("ml-variables-x");
-  const comboY = document.getElementById("ml-variable-y");
-
-  // Only populate if empty (fixes unchecking issue)
-  if (listboxX && columns.length && (!listboxX.innerHTML || listboxX.innerHTML.trim() === "")) {
-    listboxX.innerHTML = columns
-      .map((col) => {
-        const isChecked = mlSelectedVariables.includes(col) ? "checked" : "";
-        return `<label><input type="checkbox" value="${col}" ${isChecked} />${col}</label>`;
-      })
-      .join("");
-  }
-
-  if (comboY && columns.length) {
-    const currentValue = comboY.value || mlSelectedVariableY;
-    comboY.innerHTML = '<option value="">Seleccione...</option>' +
-      columns.map((col) => `<option value="${col}" ${col === currentValue ? 'selected' : ''}>${col}</option>`).join("");
-  }
-
-  // Save selection when changed
-  if (comboY) {
-    comboY.onchange = () => { mlSelectedVariableY = comboY.value; };
-  }
-
-  // Show dataset preview
   showDatasetPreview();
+  renderMlWorkspaceSummary();
+}
+
+function renderMlWorkspaceSummary() {
+  const container = document.getElementById("ml-resultados");
+  if (!container) return;
+  const report = getPredictiveReport();
+  if (!report) {
+    container.innerHTML = "<p class='empty-msg'>No hay datos predictivos disponibles.</p>";
+    return;
+  }
+
+  const test = report.test_metrics || {};
+  const train = report.train_metrics || {};
+  const coefficients = report.coefficients || [];
+  const featureNames = report.feature_names || [];
+  const splitTrain = report.split?.train || 0;
+  const splitTest = report.split?.test || 0;
+  const totalRows = report.dataset?.rows || 0;
+  const summaryRows = [
+    { label: "Registros usados", value: totalRows },
+    { label: "Entrenamiento", value: splitTrain },
+    { label: "Prueba", value: splitTest },
+    { label: "MAE", value: Number(test.mae || 0).toFixed(3) },
+    { label: "RMSE", value: Number(test.rmse || 0).toFixed(3) },
+    { label: "R2", value: Number(test.r2 || 0).toFixed(3) },
+  ];
+  container.innerHTML = `
+    <div class="ml-summary-card">
+      <div class="ml-summary-head">
+        <div>
+          <span class="ml-summary-kicker">ADMIN | Predictivo</span>
+          <strong>${escapeHtml(report.algorithm || "Regresion lineal multiple")}</strong>
+          <p>${escapeHtml(report.insight || "Modelo entrenado con 80% de entrenamiento y 20% de prueba.")}</p>
+        </div>
+        <div class="ml-summary-badge">${report.split?.train_ratio || 80}% / ${report.split?.test_ratio || 20}%</div>
+      </div>
+
+      <div class="ml-summary-grid">
+        ${summaryRows
+          .map(
+            (item) => `
+              <div class="ml-summary-metric">
+                <span>${escapeHtml(item.label)}</span>
+                <strong>${escapeHtml(String(item.value))}</strong>
+              </div>
+            `,
+          )
+          .join("")}
+      </div>
+
+      <div class="ml-summary-panel">
+        <h4>Justificacion del modelo</h4>
+        <p>Se usa regresion lineal multiple porque la variable objetivo es numerica y depende simultaneamente de edad, temperatura, frecuencia cardiaca, saturacion, presion arterial e IMC.</p>
+      </div>
+
+      <div class="ml-summary-panel">
+        <h4>Ecuacion estimada</h4>
+        <p>${escapeHtml(report.equation || "Modelo no disponible.")}</p>
+      </div>
+
+      <div class="ml-summary-panel compact">
+        <h4>Variables explicativas</h4>
+        <p>${escapeHtml(featureNames.join(", "))}</p>
+      </div>
+
+      <div class="ml-summary-panel compact">
+        <h4>Coeficientes</h4>
+        <p>${escapeHtml((coefficients || []).map((value) => Number(value || 0).toFixed(3)).join(", "))}</p>
+      </div>
+
+      <div class="ml-summary-footer">
+        <div><span>R2 entrenamiento</span><strong>${Number(train.r2 || 0).toFixed(3)}</strong></div>
+        <div><span>R2 prueba</span><strong>${Number(test.r2 || 0).toFixed(3)}</strong></div>
+        <div><span>RMSE prueba</span><strong>${Number(test.rmse || 0).toFixed(3)}</strong></div>
+      </div>
+    </div>
+  `;
 }
 
 function getDatasetColumns() {
@@ -1470,114 +1554,53 @@ function mlObtenerVariableY() {
 }
 
 function mlObtenerAlgoritmo() {
-  const radios = document.getElementsByName("ml-algorithm");
-  for (const radio of radios) {
-    if (radio.checked) return radio.value;
-  }
-  return "Arbol";
-}
-
-function mlCompararAlgoritmos() {
-  const variablesX = mlObtenerVariablesX();
-  const variableY = mlObtenerVariableY();
-
-  if (variablesX.length < 2 || !variableY) {
-    showToast("Seleccione minimo 2 variables y una objetivo", "warning");
-    return;
-  }
-
-  const algoritmos = ["RegresionLinealSimple", "RegresionLinealMultiple", "RegresionLogistica", "Arbol"];
-  let resultado = "COMPARACIÓN DE ALGORITMOS\n";
-  resultado += "==========================\n";
-  resultado += `Variables X: ${variablesX.join(", ")}\n`;
-  resultado += `Variable Y: ${variableY}\n\n`;
-
-  algoritmos.forEach(algo => {
-    const data = mlDatasetData.length > 0 ? mlDatasetData : appState.appointments || [];
-    if (!data.length) return;
-
-    // Simple accuracy estimation
-    let accuracyEstimate = 0;
-    if (algo === "RegresionLinealSimple") accuracyEstimate = 0.75;
-    else if (algo === "RegresionLinealMultiple") accuracyEstimate = 0.82;
-    else if (algo === "RegresionLogistica") accuracyEstimate = 0.88;
-    else if (algo === "Arbol") accuracyEstimate = 0.85;
-
-    resultado += `${algo}: Precision ~${(accuracyEstimate * 100).toFixed(0)}%\n`;
-  });
-
-  document.getElementById("ml-resultados").textContent = resultado;
+  return "RegresionLinealMultiple";
 }
 
 function mlMostrarConfiguracion() {
-  const variablesX = mlObtenerVariablesX();
-  const variableY = mlObtenerVariableY();
-  const algoritmo = mlObtenerAlgoritmo();
+  const report = getPredictiveReport();
+  if (!report) {
+    showToast("No hay reporte predictivo disponible", "warning");
+    return;
+  }
 
-  let texto = "Variables X:\n";
-  variablesX.forEach((x) => { texto += `${x}\n`; });
-  texto += `\nVariable Y: ${variableY}\n`;
-  texto += `Algoritmo: ${algoritmo}\n`;
+  const texto = [
+    `Algoritmo: ${report.algorithm || "Regresion lineal multiple"}`,
+    `Objetivo: ${report.target || "minutos_estimados"}`,
+    `Variables: ${(report.feature_names || []).join(", ")}`,
+    `Split: ${report.split?.train_ratio || 80}% entrenamiento / ${report.split?.test_ratio || 20}% prueba`,
+    `Ecuacion: ${report.equation || "No disponible"}`,
+  ].join("\n");
 
   document.getElementById("ml-resultados").textContent = texto;
 }
 
 function mlEntrenarModelo() {
-  const variablesX = mlObtenerVariablesX();
-  const variableY = mlObtenerVariableY();
-  const algoritmo = mlObtenerAlgoritmo();
-
-  if (variablesX.length < 2) {
-    showToast("Seleccione minimo 2 variables predictoras", "warning");
+  const report = getPredictiveReport();
+  if (!report) {
+    showToast("No hay datos para entrenar", "warning");
     return;
   }
 
-  if (!variableY) {
-    showToast("Seleccione variable objetivo", "warning");
-    return;
-  }
-
-  // Mock training - in real app would call backend API
-  const texto = `Entrenando modelo ${algoritmo}...\n\n`;
-  const resultados = `Accuracy : 0.85\nPrecision: 0.82\nRecall   : 0.80\nF1 Score : 0.81`;
-
-  document.getElementById("ml-resultados").textContent = texto + resultados;
-  showToast("Modelo entrenado correctamente", "success");
-}
-
-function mlCompararAlgoritmos() {
-  const variablesX = mlObtenerVariablesX();
-  const variableY = mlObtenerVariableY();
-
-  if (variablesX.length < 2) {
-    showToast("Seleccione minimo 2 variables predictoras", "warning");
-    return;
-  }
-
-  if (!variableY) {
-    showToast("Seleccione variable objetivo", "warning");
-    return;
-  }
-
-  // Mock comparison
-  const texto = `Comparando algoritmos (5-fold CV)...\n\nRegresion Lineal Simple: 0.78\nRegresion Lineal Multiple: 0.81\nArbol de Decision: 0.82\nRandom Forest: 0.87\nRegresion Logistica: 0.79`;
+  const train = report.train_metrics || {};
+  const test = report.test_metrics || {};
+  const texto = [
+    "Entrenamiento 80/20 completado",
+    `Dataset: ${report.dataset?.rows || 0} registros`,
+    `Entrenamiento: ${report.split?.train || 0} registros`,
+    `Prueba: ${report.split?.test || 0} registros`,
+    `MAE train: ${Number(train.mae || 0).toFixed(3)} | RMSE train: ${Number(train.rmse || 0).toFixed(3)} | R2 train: ${Number(train.r2 || 0).toFixed(3)}`,
+    `MAE test: ${Number(test.mae || 0).toFixed(3)} | RMSE test: ${Number(test.rmse || 0).toFixed(3)} | R2 test: ${Number(test.r2 || 0).toFixed(3)}`,
+  ].join("\n");
 
   document.getElementById("ml-resultados").textContent = texto;
-  showToast("Comparacion completada", "info");
+  showToast("Regresion lineal multiple entrenada con split 80/20", "success");
 }
 
 function mlMostrarGraficos() {
-  const variablesX = mlObtenerVariablesX();
-  const variableY = mlObtenerVariableY();
-  const algoritmo = mlObtenerAlgoritmo();
-
-  if (variablesX.length < 2) {
-    showToast("Seleccione minimo 2 variables predictoras para mostrar graficos", "warning");
-    return;
-  }
-
-  if (!variableY) {
-    showToast("Seleccione variable objetivo para mostrar graficos", "warning");
+  const report = getPredictiveReport();
+  if (!report) {
+    showToast("No hay reporte predictivo disponible", "warning");
     return;
   }
 
@@ -1590,108 +1613,82 @@ function mlMostrarGraficos() {
     chartsPanel.style.display = "block";
   }
 
-  // Generate interpretation based on algorithm
-  let interpretation = "";
-  let chartContent = "";
+  const testPoints = report.test_predictions || [];
+  const actualValues = testPoints.map((item) => Number(item.actual || 0));
+  const predictedValues = testPoints.map((item) => Number(item.predicted || 0));
+  const minValue = Math.min(...actualValues, ...predictedValues, 0);
+  const maxValue = Math.max(...actualValues, ...predictedValues, 1);
+  const range = Math.max(1, maxValue - minValue);
 
-  if (algoritmo === "RegresionLinealSimple") {
-    interpretation = `Grafico de Regresion Lineal Simple: Muestra la relacion entre ${variablesX[0]} y ${variableY}. El modelo calcula una linea recta que mejor se ajusta a los datos. Si los puntos estan cerca de la linea, el modelo tiene buen ajuste.`;
-    chartContent = `<div class="chart-placeholder">
-      <h4>Regresion Lineal Simple: ${variablesX[0]} vs ${variableY}</h4>
-      <svg width="100%" height="300" viewBox="0 0 500 300">
-        <line x1="50" y1="250" x2="450" y2="50" stroke="#316bff" stroke-width="2" stroke-dasharray="5,5"/>
-        <circle cx="100" cy="200" r="5" fill="#008b8b"/>
-        <circle cx="150" cy="180" r="5" fill="#008b8b"/>
-        <circle cx="200" cy="160" r="5" fill="#008b8b"/>
-        <circle cx="250" cy="140" r="5" fill="#008b8b"/>
-        <circle cx="300" cy="120" r="5" fill="#008b8b"/>
-        <circle cx="350" cy="100" r="5" fill="#008b8b"/>
-        <circle cx="400" cy="80" r="5" fill="#008b8b"/>
-      </svg>
-      <p style="margin-top:10px;font-size:12px;color:#64748b;">Coeficiente de correlacion: 0.85 (buena correlacion positiva)</p>
-    </div>`;
-  } else if (algoritmo === "RegresionLinealMultiple") {
-    // Generate coefficients for visualization
-    const coeffs = variablesX.map(() => Math.random() * 0.8 + 0.1);
-    const maxCoeff = Math.max(...coeffs);
-    interpretation = `Grafico de Regresion Lineal Multiple: Analiza el impacto de ${variablesX.length} variables predictoras en ${variableY}. Los coeficientes muestran la importancia relativa de cada predictor. Un coeficiente mayor indica mayor influencia en el resultado.`;
-    chartContent = `<div class="chart-placeholder">
-      <h4>Regresion Lineal Multiple: Pesos de Variables</h4>
-      <div style="display:flex;gap:8px;align-items:flex-end;height:220px;padding:15px;background:#f8fafc;border-radius:8px;">
-        ${variablesX.map((v, i) => {
-          const height = (coeffs[i] / maxCoeff * 100).toFixed(1);
-          const color = i % 2 === 0 ? "#316bff" : "#12a37d";
-          return `
-          <div style="flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;">
-            <div style="background:linear-gradient(180deg,${color},#1e4a8f);width:80%;height:${height}%;border-radius:6px 6px 0 0;min-height:20px;"></div>
-            <div style="font-size:9px;margin-top:5px;color:#334155;font-weight:600;">${v.substring(0,6)}</div>
-            <div style="font-size:10px;color:#64748b;">${coeffs[i].toFixed(2)}</div>
-          </div>`;
-        }).join("")}
+  const scatterPoints = testPoints.slice(0, 20).map((point, index) => {
+    const actual = Number(point.actual || 0);
+    const predicted = Number(point.predicted || 0);
+    const x = 62 + ((actual - minValue) / range) * 420;
+    const y = 250 - ((predicted - minValue) / range) * 190;
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="#008b8b" opacity="0.92" />`;
+  }).join("");
+
+  const sampleRows = testPoints.slice(0, 6).map((point, index) => {
+    const actual = Number(point.actual || 0);
+    const predicted = Number(point.predicted || 0);
+    const error = predicted - actual;
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${actual.toFixed(1)}</td>
+        <td>${predicted.toFixed(1)}</td>
+        <td>${error.toFixed(1)}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const interpretation = `El gráfico compara los minutos reales contra los minutos predichos por la regresión lineal múltiple. La línea diagonal representa predicción perfecta: mientras más cerca estén los puntos, mejor es el ajuste.`;
+  const chartContent = `
+    <div class="ml-chart-grid">
+      <div class="ml-plot-card">
+        <div class="ml-plot-head">
+          <div>
+            <h4>Minutos reales vs predichos</h4>
+            <p>Vista de prueba del 20% reservado.</p>
+          </div>
+          <span class="ml-plot-legend"><i></i>Punto de prueba</span>
+        </div>
+        <svg class="ml-scatter-svg" viewBox="0 0 560 320" role="img" aria-label="Grafico de minutos reales versus predichos">
+          <rect x="54" y="26" width="440" height="236" rx="12" fill="#f8fafc" stroke="#dbe4ea" />
+          <line x1="74" y1="242" x2="474" y2="42" stroke="#94a3b8" stroke-width="2.2" stroke-dasharray="7,7" />
+          <line x1="74" y1="242" x2="486" y2="242" stroke="#cbd5e1" stroke-width="1.5" />
+          <line x1="74" y1="242" x2="74" y2="34" stroke="#cbd5e1" stroke-width="1.5" />
+          ${scatterPoints || ""}
+          <text x="74" y="264" font-size="11" fill="#64748b">0</text>
+          <text x="472" y="264" font-size="11" fill="#64748b">Máximo real</text>
+          <text x="12" y="44" transform="rotate(-90 12 44)" font-size="11" fill="#64748b">Predicho</text>
+          <text x="252" y="304" font-size="11" fill="#64748b">Real</text>
+        </svg>
+        <p class="ml-plot-note">La línea punteada es la referencia ideal. Si los puntos quedan cerca, el modelo predice mejor el tiempo de atención.</p>
       </div>
-      <p style="margin-top:12px;font-size:12px;color:#64748b;padding:8px;background:#fff;border-radius:4px;border:1px solid #e2e8f0;"><strong>Resumen:</strong> ${variablesX.length} predictores analizados con ${variableY} como objetivo. Los colores indican diferentes grupos de variables.</p>
-    </div>`;
-  } else if (algoritmo === "RegresionLogistica") {
-    interpretation = `Grafico de Regresion Logistica: Clasifica los datos en dos categorias (0/1). La curva en forma de S muestra la probabilidad. Valores mayores al umbral se clasifican como 1.`;
-    chartContent = `<div class="chart-placeholder">
-      <h4>Curva Regresion Logistica</h4>
-      <svg width="100%" height="300" viewBox="0 0 500 300">
-        <path d="M50,250 Q150,250 200,200 T300,100 T450,50" fill="none" stroke="#316bff" stroke-width="3"/>
-        <line x1="50" y1="150" x2="450" y2="150" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5"/>
-        <text x="460" y="155" font-size="12"> Umbral</text>
-        <circle cx="100" cy="245" r="5" fill="#22c55e"/>
-        <circle cx="180" cy="220" r="5" fill="#22c55e"/>
-        <circle cx="260" cy="180" r="5" fill="#eab308"/>
-        <circle cx="340" cy="120" r="5" fill="#f97316"/>
-        <circle cx="420" cy="60" r="5" fill="#dc2626"/>
-      </svg>
-      <p style="margin-top:10px;font-size:12px;color:#64748b;">Accuracy: 0.79 | Precision: 0.81 | Recall: 0.77</p>
-    </div>`;
-  } else if (algoritmo === "Arbol") {
-    interpretation = `Arbol de Decision: Estructura jerarquica de reglas. Cada nivel evalua una condicion sobre una variable. Las hojas muestran la clase predicted.`;
-    chartContent = `<div class="chart-placeholder">
-      <h4>Arbol de Decision</h4>
-      <svg width="100%" height="280" viewBox="0 0 500 280">
-        <ellipse cx="250" cy="30" rx="90" ry="22" fill="#008b8b" stroke="#fff"/>
-        <text x="250" y="35" text-anchor="middle" fill="#fff" font-size="11">${variablesX[0]} &lt; ${Math.floor(Math.random() * 50 + 30)}?</text>
-        <line x1="250" y1="52" x2="150" y2="110" stroke="#316bff" stroke-width="2"/>
-        <line x1="250" y1="52" x2="350" y2="110" stroke="#316bff" stroke-width="2"/>
-        <ellipse cx="150" cy="120" rx="55" ry="18" fill="#316bff" stroke="#fff"/>
-        <text x="150" y="124" text-anchor="middle" fill="#fff" font-size="10">Si</text>
-        <ellipse cx="350" cy="120" rx="55" ry="18" fill="#316bff" stroke="#fff"/>
-        <text x="350" y="124" text-anchor="middle" fill="#fff" font-size="10">No</text>
-        <rect x="90" y="200" width="100" height="35" rx="4" fill="#22c55e" stroke="#fff"/>
-        <text x="140" y="223" text-anchor="middle" fill="#fff" font-size="11">Clase A</text>
-        <rect x="310" y="200" width="100" height="35" rx="4" fill="#f97316" stroke="#fff"/>
-        <text x="360" y="223" text-anchor="middle" fill="#fff" font-size="11">Clase B</text>
-      </svg>
-      <p style="margin-top:8px;font-size:12px;color:#64748b;">Decision Tree | Precision: 0.82 | Recall: 0.79</p>
-    </div>`;
-  } else if (algoritmo === "Forest") {
-    // Random Forest - show ensemble of multiple trees
-    const numTrees = 5;
-    interpretation = `Random Forest (Ensamble): Combina ${numTrees} Arboles de Decision para mayor precision. Cada arbol es una estructura similar a la mostrada. El resultado final se determina por votacion mayoritaria.`;
-    chartContent = `<div class="chart-placeholder">
-      <h4>Random Forest - Ensamble de Arboles</h4>
-      <div style="display:flex;gap:8px;justify-content:center;align-items:flex-end;height:220px;padding:10px;background:#f8fafc;border-radius:8px;">
-        ${Array(5).fill(0).map((_, i) => {
-          const height = 60 + Math.random() * 80;
-          const color = i % 2 === 0 ? "#059669" : "#0891b2";
-          return `<div style="text-align:center;">
-            <div style="background:linear-gradient(180deg,${color},#064e3b);width:50px;height:${height}px;border-radius:6px 6px 0 0;margin:0 auto;"></div>
-            <div style="font-size:9px;margin-top:4px;color:#475569;">Tree ${i+1}</div>
-          </div>`;
-        }).join("")}
-      </div>
-      <p style="margin-top:10px;font-size:12px;color:#64748b;">5 Arboles en ensamble | Precision: 0.87 | Mejor que Arbol simple</p>
-      <div style="margin-top:8px;padding:8px;background:#ecfdf5;border-radius:4px;font-size:11px;color:#065f46;">
-        <strong>Ventaja:</strong> Random Forest reduce overfitting promediando multiples modelos.
+      <div class="ml-table-card">
+        <h4>Muestras de prueba</h4>
+        <table class="ml-test-table">
+          <thead>
+            <tr><th>#</th><th>Real</th><th>Predicho</th><th>Error</th></tr>
+          </thead>
+          <tbody>
+            ${sampleRows || `<tr><td colspan="4">Sin muestras de prueba</td></tr>`}
+          </tbody>
+        </table>
       </div>
     </div>`;
-  }
 
   if (interpretationDiv) {
-    interpretationDiv.innerHTML = interpretation;
+    interpretationDiv.innerHTML = `
+      <div class="decision-note">${escapeHtml(interpretation)}</div>
+      <div class="ml-summary-grid" style="margin-top:12px;">
+        <div><span>Entrenamiento</span><strong>${report.split?.train || 0}</strong></div>
+        <div><span>Prueba</span><strong>${report.split?.test || 0}</strong></div>
+        <div><span>MAE test</span><strong>${Number(report.test_metrics?.mae || 0).toFixed(3)}</strong></div>
+        <div><span>R2 test</span><strong>${Number(report.test_metrics?.r2 || 0).toFixed(3)}</strong></div>
+      </div>
+    `;
   }
 
   if (chartDiv) {
@@ -1702,81 +1699,30 @@ function mlMostrarGraficos() {
 }
 
 function renderMlModelCards() {
-  const info = appState.mlInfo;
-  const cards = [
-    {
-      title: "Regresion lineal",
-      value: info
-        ? `PA = ${info.linear_regression.slope} x FC + ${info.linear_regression.intercept}`
-        : "Presion por FC",
-      input: "Entrada: frecuencia cardiaca capturada en triaje.",
-      output: "Salida: presion sistolica esperada.",
-      use: "Uso: comparar la presion real contra una referencia calculada y detectar lecturas fuera de patron.",
-    },
-    {
-      title: "Regresion lineal multiple",
-      value: info
-        ? `${info.multiple_linear_regression.coefficients.length} coeficientes`
-        : "Tiempo de consulta",
-      input: "Entrada: edad, temperatura, FC, SpO2, presion e IMC.",
-      output: "Salida: minutos estimados de consulta.",
-      use: "Uso: anticipar carga medica y ayudar a organizar la agenda de consultorios.",
-    },
-    {
-      title: "Regresion logistica",
-      value: info
-        ? `${info.logistic_regression.weights.length} pesos`
-        : "Riesgo clinico",
-      input: "Entrada: signos vitales e indicadores corporales.",
-      output: "Salida: probabilidad de riesgo bajo, moderado o alto.",
-      use: "Uso: alertar si un paciente necesita atencion prioritaria antes de consulta.",
-    },
-    {
-      title: "Arbol de decision",
-      value: info ? info.decision_tree.classes.join(" / ") : "Prioridad",
-      input:
-        "Entrada: umbrales clinicos aprendidos desde los datos de entrenamiento.",
-      output: "Salida: emergencia, urgente, preferente o rutina.",
-      use: "Uso: ordenar la cola medica con una regla interpretable para el personal.",
-    },
-  ];
-  return cards
-    .map(
-      (card) => `
+  const report = getPredictiveReport();
+  if (!report) return empty("Sin indicadores predictivos disponibles");
+  return `
     <article class="ml-card">
-      <span>${escapeHtml(card.title)}</span>
-      <strong>${escapeHtml(card.value)}</strong>
-      <p>${escapeHtml(card.input)}</p>
-      <p>${escapeHtml(card.output)}</p>
-      <p>${escapeHtml(card.use)}</p>
+      <span>${escapeHtml(report.algorithm || "Regresion lineal multiple")}</span>
+      <strong>${escapeHtml(report.target || "minutos_estimados")}</strong>
+      <p>${escapeHtml((report.feature_names || []).join(", "))}</p>
+      <p>Entrenamiento ${report.split?.train_ratio || 80}% / Prueba ${report.split?.test_ratio || 20}%</p>
+      <p>R2 prueba: ${Number(report.test_metrics?.r2 || 0).toFixed(3)} | RMSE prueba: ${Number(report.test_metrics?.rmse || 0).toFixed(3)}</p>
     </article>
-  `,
-    )
-    .join("");
+  `;
 }
 
 function renderMlCharts() {
-  const data = appState.mlDashboard || {};
-  const evalData = appState.mlEvaluate || {};
-  renderBarChart("ml-priority-chart", data.priority_distribution || []);
-  renderBarChart("ml-risk-chart", data.risk_distribution || []);
-  renderAlgorithmComparison(
-    "ml-comparison-chart",
-    evalData.algorithm_comparison || [],
-  );
-  renderRocCurve(
-    "ml-roc-chart",
-    evalData.roc_curve || [],
-  );
+  const report = getPredictiveReport();
+  const points = report?.test_predictions || [];
   renderRegressionChart(
     "ml-regression-chart",
-    data.linear_regression_points || [],
+    points.map((item) => ({
+      heart_rate: item.actual,
+      actual_systolic: item.actual,
+      predicted_systolic: item.predicted,
+    })),
   );
-  renderConfusionMatrix(
-    "ml-confusion-chart",
-    evalData.confusion_matrix || [],
-  );
-  renderOperationalCharts(data.operational || {});
 }
 
 function renderOperationalCharts(op) {
@@ -1845,31 +1791,22 @@ function renderOperationalCharts(op) {
 }
 
 function renderMlInsights() {
-  const summary = appState.mlDashboard?.summary;
-  if (!summary) return empty("Sin indicadores predictivos disponibles");
-  const urgentRate = Math.round(Number(summary.urgent_rate || 0));
-  const risk = Math.round(Number(summary.average_risk || 0));
-  const minutes = Number(summary.average_attention_minutes || 0).toFixed(1);
-  const hasRealTriage =
-    Number(summary.samples || 0) > 0 &&
-    summary.source === "triajes registrados";
-  const sourceNote = hasRealTriage
-    ? "Los graficos resumen triajes reales guardados en el sistema. El modelo base sigue entrenado con datos clinicos simulados para fines academicos."
-    : "Aun no hay triajes reales guardados; el dashboard muestra una simulacion inicial para explicar como funcionara con datos registrados.";
+  const report = getPredictiveReport();
+  if (!report) return empty("Sin indicadores predictivos disponibles");
   return `
     <article class="insight-strip">
-      <div><span>Muestra</span><strong>${summary.samples}</strong><small>${escapeHtml(summary.source || "")}</small></div>
-      <div><span>Riesgo promedio</span><strong>${risk}%</strong><small>Regresion logistica</small></div>
-      <div><span>Tiempo estimado</span><strong>${minutes} min</strong><small>Regresion multiple</small></div>
-      <div><span>Casos urgentes</span><strong>${urgentRate}%</strong><small>Arbol de decision</small></div>
+      <div><span>Muestra</span><strong>${report.dataset?.rows || 0}</strong><small>triage_dataset.csv</small></div>
+      <div><span>Train</span><strong>${report.split?.train || 0}</strong><small>${report.split?.train_ratio || 80}%</small></div>
+      <div><span>Test</span><strong>${report.split?.test || 0}</strong><small>${report.split?.test_ratio || 20}%</small></div>
+      <div><span>R2 test</span><strong>${Number(report.test_metrics?.r2 || 0).toFixed(3)}</strong><small>regresion multiple</small></div>
     </article>
     <div class="ml-flow">
-      <div><span>Datos capturados</span><strong>DNI + triaje IoT</strong><small>Paciente, edad, signos vitales e IMC.</small></div>
-      <div><span>Analisis predictivo</span><strong>4 algoritmos</strong><small>Presion esperada, minutos, riesgo y prioridad.</small></div>
-      <div><span>Decision operativa</span><strong>Cola medica</strong><small>Apoya a recepcion, triaje, medico y administracion.</small></div>
+      <div><span>Datos capturados</span><strong>CSV clinico</strong><small>Edad, temperatura, FC, SpO2, presiones e IMC.</small></div>
+      <div><span>Analisis predictivo</span><strong>Regresion multiple</strong><small>Tiempo estimado de atencion.</small></div>
+      <div><span>Decision operativa</span><strong>Planeacion</strong><small>Soporta la gestion de la agenda en ADMIN.</small></div>
     </div>
-    <div class="decision-note">${escapeHtml(summary.insight || "El panel traduce los modelos en acciones operativas.")}</div>
-    <div class="data-note">${escapeHtml(sourceNote)}</div>
+    <div class="decision-note">${escapeHtml(report.insight || "El panel traduce el modelo en acciones operativas.")}</div>
+    <div class="data-note">El 80% de las filas se usa para entrenar y el 20% restante para prueba, siguiendo la justificacion academica del modelo.</div>
   `;
 }
 
@@ -2014,8 +1951,6 @@ document.addEventListener("click", async (event) => {
       mlMostrarConfiguracion();
     } else if (button.id === "btn-ml-entrenar") {
       mlEntrenarModelo();
-    } else if (button.id === "btn-ml-comparar") {
-      mlCompararAlgoritmos();
     } else if (button.id === "clear-reception-form") {
       const form = document.getElementById("reception-form");
       form.reset();
@@ -2310,20 +2245,20 @@ function adminRows(items, type, title, subtitle) {
 let pharmacyPaymentSelections = {};
 
 function prescriptionCard(item) {
-  // Preservar selección para esta receta
   const savedMethod = pharmacyPaymentSelections[item.id] || "Efectivo";
 
   const rows = (item.items || [])
     .map((med) => {
-      // Calcular cantidad: dosis * veces al dia * dias
-      const freq = Number(med.frequency) || 8;
-      const dosesPerDay = Math.max(1, Math.round(24 / freq));
-      const days = Number(med.days) || 3;
-      const dosage = Number(med.dosage) || 1;
-      const quantity = dosage * dosesPerDay * days;
-      return `<li><span class="med-name">${escapeHtml(med.medicine)}</span><span>${dosage}</span><span>${freq}h x ${dosesPerDay}/dia</span><span>${days} dias</span><span>${quantity} und.</span><span class="med-price">${money(med.unit_price * quantity)}</span></li>`;
+      const dosage = med.dosage || "-";
+      const frequency = med.frequency || "-";
+      const days = med.days ?? "-";
+      const quantity = med.quantity ?? "-";
+      const unitPrice = Number(med.unit_price) || 0;
+      const totalPrice = Number(med.quantity) ? unitPrice * Number(med.quantity) : unitPrice;
+      return `<li><span class="med-name">${escapeHtml(med.medicine)}</span><span>${escapeHtml(String(dosage))}</span><span>${escapeHtml(String(frequency))}</span><span>${escapeHtml(String(days))}</span><span>${escapeHtml(String(quantity))} und.</span><span class="med-price">${money(totalPrice)}</span></li>`;
     })
     .join("");
+
   return `<article class="prescription-card prescription-pending-card">
     <div class="prescription-header">
       <div class="prescription-ticket"><span class="pill-badge">${escapeHtml(item.ticket)}</span></div>
@@ -2345,66 +2280,6 @@ function prescriptionCard(item) {
       </div>
     </div>
   </article>`;
-}
-
-function renderTransactions(items) {
-  if (!items.length) return empty("Sin transacciones registradas");
-  // Mostrar del último al primero
-  return [...items].reverse()
-    .map(
-      (item) => {
-        // Las prescripciones tienen 'total', las transacciones tienen 'amount'
-        const amount = item.amount !== undefined ? item.amount : (item.total || 0);
-        // Etiqueta personalizada según el tipo de transacción
-        let typeLabel = escapeHtml(item.concept);
-        if (item.concept && item.concept.toLowerCase().includes("pago")) {
-          typeLabel = "Pago confirmado";
-        }
-        // Si es prescripción, usar ticket y patient_name
-        const code = item.transaction_code || item.ticket || "RX";
-        const patient = item.patient_name || item.patient?.full_name || "-";
-        const method = item.payment_method || "Efectivo";
-        const date = item.created_at || item.dispensed_at;
-        return `
-    <article class="queue-card compact transaction-card">
-      <div>
-        <strong>${escapeHtml(code)} - ${escapeHtml(patient)}</strong>
-        <span>${typeLabel} · ${escapeHtml(method)} · ${formatDateTime(date)}</span>
-      </div>
-      <strong>${money(amount)}</strong>
-    </article>
-  `;
-      }
-    )
-    .join("");
-}
-
-function queueAppointment(item) {
-  return `<article class="queue-card">
-    <div><strong>${escapeHtml(item.ticket)} - ${escapeHtml(item.patient.full_name)}</strong><span>${escapeHtml(item.specialty.name)} · ${statusText(item.status)}</span></div>
-    ${statusLabel(item.payment_status)}
-  </article>`;
-}
-
-function consultationMlSummary(item) {
-  const triage = item.triage;
-  if (!triage) return empty("Paciente sin triaje registrado.");
-  const analysis = triage.analysis || {};
-  // Primary sources: analysis (from JSON column), fallback: triage (from aliases)
-  const predictedPA = analysis.sistolica_predicha ?? triage.predicted_systolic ?? triage.sistolica_predicha;
-  const estMinutes = analysis.minutos_estimados ?? triage.estimated_attention_minutes ?? triage.minutos_estimados;
-  return `<div class="summary-grid">
-    <span>Prioridad</span><strong>${escapeHtml(triage.priority)}</strong>
-    <span>Riesgo</span><strong>${escapeHtml(triage.risk_label)}</strong>
-    <span>Signos</span><strong>${triage.temperature} C - FC ${triage.heart_rate} - SpO2 ${triage.spo2}% - PA ${triage.systolic}/${triage.diastolic}</strong>
-    <span>IA</span><strong>PA esperada ${predictedPA ?? "--"} - Consulta ${estMinutes ?? "--"} min</strong>
-    <span>Decision</span><strong>${escapeHtml(triage.decision_summary)}</strong>
-  </div>
-  <div class="ml-result-grid compact-ml">
-    <div><span>Regresion logistica</span><strong>Riesgo ${escapeHtml(triage.risk_label)}</strong><p>Ayuda a priorizar pacientes con mayor probabilidad de complicacion.</p></div>
-    <div><span>Arbol de decision</span><strong>${escapeHtml(triage.priority)}</strong><p>Clasifica la atencion en emergencia, urgente, preferente o rutina.</p></div>
-    <div><span>Regresion multiple</span><strong>${estMinutes ?? "--"} min</strong><p>Estima la carga de consulta para gestionar el flujo medico.</p></div>
-  </div>`;
 }
 
 function analysisMlBox(analysis) {

@@ -344,60 +344,15 @@
           <section class="admin-panel" data-admin-panel="ml">
             <div class="ml-workspace">
               <div class="ml-sidebar">
-                <h3>Modelo Predictivo</h3>
-                <p id="ml-file-name">Dataset de triaje cargado</p>
-
+                <h3>Regresion lineal multiple</h3>
+                <p id="ml-file-name">Tiempo estimado de atencion con particion 80% entrenamiento y 20% prueba.</p>
                 <div class="ml-section">
-                  <label class="ml-label">Variable Objetivo (Y)</label>
-                  <select id="ml-variable-y" class="ml-select">
-                    <option value="">Seleccione variable a predecir...</option>
-                  </select>
-                </div>
-
-                <div class="ml-section">
-                  <label class="ml-label">Variables Predictoras (X)</label>
-                  <div class="ml-listbox" id="ml-variables-x"></div>
-                  <small style="color:#64748b;display:block;margin-top:4px;">Seleccione una o mas variables</small>
-                </div>
-
-                <div class="ml-section">
-                  <label class="ml-label">Seleccionar Algoritmo</label>
-                  <div class="algorithm-cards">
-                    <label class="algorithm-card">
-                      <input type="radio" name="ml-algorithm" value="RegresionLinealSimple" checked />
-                      <div class="algo-info">
-                        <strong>Regresion Lineal</strong>
-                        <span>Predice valores numericos</span>
-                      </div>
-                    </label>
-                    <label class="algorithm-card">
-                      <input type="radio" name="ml-algorithm" value="RegresionLinealMultiple" />
-                      <div class="algo-info">
-                        <strong>Regresion Multiple</strong>
-                        <span>Multiples predictores</span>
-                      </div>
-                    </label>
-                    <label class="algorithm-card">
-                      <input type="radio" name="ml-algorithm" value="RegresionLogistica" />
-                      <div class="algo-info">
-                        <strong>Clasificacion</strong>
-                        <span>Categorias binarias</span>
-                      </div>
-                    </label>
-                    <label class="algorithm-card">
-                      <input type="radio" name="ml-algorithm" value="Arbol" />
-                      <div class="algo-info">
-                        <strong>Arbol de Decision</strong>
-                        <span>Reglas jerarquicas</span>
-                      </div>
-                    </label>
-                  </div>
+                  <div class="decision-note">Variables usadas: edad, temperatura, ritmo cardiaco, SpO2, presion sistolica, presion diastolica e IMC.</div>
                 </div>
 
                 <div class="ml-actions">
                   <button id="btn-ml-entrenar" class="primary-button" type="button">Entrenar Modelo</button>
                   <button id="btn-ml-graficos" class="secondary-button" type="button">Ver Grafico</button>
-                  <button id="btn-ml-comparar" class="secondary-button" type="button">Comparar</button>
                   <button id="btn-ml-config" class="secondary-button" type="button">Mostrar Configuración</button>
                 </div>
 
